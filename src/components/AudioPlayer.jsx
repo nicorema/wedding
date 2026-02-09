@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAudio } from "../contexts/AudioContext";
 import styles from "./AudioPlayer.module.scss";
 
 function AudioPlayer({ src, autoPlay = false }) {
@@ -10,6 +11,13 @@ function AudioPlayer({ src, autoPlay = false }) {
   const playButtonRef = useRef(null);
   const hasStartedRef = useRef(false);
   const interactionHandlerRef = useRef(null);
+  const { audioRef: contextAudioRef, setIsPlayingRef } = useAudio();
+
+  // Expose audio ref and setIsPlaying to context
+  useEffect(() => {
+    contextAudioRef.current = audioRef.current;
+    setIsPlayingRef.current = setIsPlaying;
+  }, [contextAudioRef, setIsPlayingRef]);
 
   // Initialize audio settings
   useEffect(() => {
