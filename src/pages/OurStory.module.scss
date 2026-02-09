@@ -1,0 +1,140 @@
+.historia {
+  max-width: 850px;
+  margin: 0 auto;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100px;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, 
+      transparent 0%, 
+      var(--sage-green) 20%, 
+      var(--eucalyptus-green) 50%, 
+      var(--sage-green) 80%, 
+      transparent 100%);
+    opacity: 0.3;
+    border-radius: 2px;
+  }
+}
+
+.title {
+  font-size: 3.5rem;
+  color: var(--forest-green);
+  margin-bottom: 4rem;
+  text-align: center;
+  font-weight: 600;
+  font-family: 'Georgia', serif;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(95, 111, 90, 0.1);
+  position: relative;
+
+  &::before {
+    content: '🌿';
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+}
+
+.section {
+  margin-bottom: 3.5rem;
+  padding: 3rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 239, 232, 0.9) 100%);
+  border-radius: 20px;
+  border-left: 5px solid var(--eucalyptus-green);
+  box-shadow: 
+    0 8px 16px rgba(95, 111, 90, 0.1),
+    0 2px 4px rgba(95, 111, 90, 0.05);
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(127, 143, 122, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+  }
+
+  &:hover {
+    transform: translateX(5px);
+    box-shadow: 
+      0 12px 24px rgba(95, 111, 90, 0.12),
+      0 4px 8px rgba(95, 111, 90, 0.08);
+  }
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  color: var(--forest-green);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-family: 'Georgia', serif;
+  position: relative;
+  z-index: 1;
+
+  &::before {
+    content: '✨';
+    display: inline-block;
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+  }
+}
+
+.text {
+  color: var(--forest-green);
+  line-height: 2;
+  font-size: 1.15rem;
+  text-align: justify;
+  position: relative;
+  z-index: 1;
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .historia {
+    &::before {
+      display: none;
+    }
+  }
+
+  .title {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    letter-spacing: 0.5px;
+
+    &::before {
+      font-size: 1.5rem;
+    }
+  }
+
+  .section {
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    border-left-width: 4px;
+  }
+
+  .sectionTitle {
+    font-size: 1.75rem;
+
+    &::before {
+      font-size: 1rem;
+    }
+  }
+
+  .text {
+    font-size: 1.05rem;
+    line-height: 1.9;
+  }
+}
+

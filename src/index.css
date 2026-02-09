@@ -1,0 +1,80 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --eucalyptus-green: #7f8f7a;
+  --moss-green: #5f6f5a;
+  --olive-green: #8a8f5a;
+  --forest-green: #4a5d4a;
+  --deep-green: #3d4f3d;
+  --sage-green: #9caf8c;
+  --ivory: #f3efe8;
+  --warm-beige: #d8cfc2;
+  --light-sand: #e6ddcf;
+  --light-wood: #c2a87d;
+  --walnut-wood: #8b6a4f;
+  --warm-white: #fff4d6;
+  --soft-amber: #e6b65c;
+  --leaf-shadow: rgba(95, 111, 90, 0.15);
+}
+
+body {
+  font-family: "Georgia", "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: radial-gradient(
+      ellipse at top,
+      rgba(127, 143, 122, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at bottom,
+      rgba(95, 111, 90, 0.08) 0%,
+      transparent 50%
+    ),
+    linear-gradient(180deg, #f5f1ea 0%, #e8e4db 50%, #e0dcd3 100%);
+  background-attachment: fixed;
+  color: var(--forest-green);
+  line-height: 1.8;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+}
+
+/* Improve mobile touch interactions */
+button,
+a {
+  -webkit-tap-highlight-color: rgba(127, 143, 122, 0.2);
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on game grid */
+[data-row][data-col] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,20 Q30,10 40,20 T60,20 T80,20' stroke='%237F8F7A' stroke-width='0.5' fill='none' opacity='0.03'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='2' fill='%235F6F5A' opacity='0.02'/%3E%3C/svg%3E");
+  background-size: 200px 200px, 100px 100px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}

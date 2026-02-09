@@ -1,0 +1,25 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  min-height: calc(100vh - 100px);
+  position: relative;
+
+  @media (max-width: 780px) {
+    padding: 0 1rem; // Horizontal padding for mobile
+    margin: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    overflow: visible; // Allow scrolling
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 0.75rem; // Smaller horizontal padding for small mobile
+    margin: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    overflow: visible; // Allow scrolling
+  }
+}
