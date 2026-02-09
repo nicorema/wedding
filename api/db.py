@@ -1,15 +1,15 @@
 import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 from contextlib import contextmanager
 
 
 # Supabase PostgreSQL connection
 def get_db_connection():
     """Get PostgreSQL connection from Supabase"""
-    conn = psycopg2.connect(
+    conn = psycopg.connect(
         host=os.environ.get("SUPABASE_DB_HOST"),
-        database=os.environ.get("SUPABASE_DB_NAME", "postgres"),
+        dbname=os.environ.get("SUPABASE_DB_NAME", "postgres"),
         user=os.environ.get("SUPABASE_DB_USER"),
         password=os.environ.get("SUPABASE_DB_PASSWORD"),
         port=os.environ.get("SUPABASE_DB_PORT", "5432"),
@@ -22,7 +22,6 @@ def get_db_connection():
 def get_db():
     """Context manager to handle database connections"""
     conn = get_db_connection()
-    conn.set_session(autocommit=False)
     try:
         yield conn
         conn.commit()
@@ -76,7 +75,7 @@ def init_db():
 def get_best_score():
     """Gets the score with the lowest time (best time)"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             SELECT name, time, created_at
@@ -94,7 +93,7 @@ def get_best_score():
 def create_score(name, time):
     """Creates a new score"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             INSERT INTO scores (name, time)
@@ -111,7 +110,7 @@ def create_score(name, time):
 def get_all_scores():
     """Gets all scores ordered by time (best first) for ranking"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             SELECT id, name, time, created_at
@@ -127,7 +126,7 @@ def get_all_scores():
 def get_approved_messages():
     """Gets only messages with 'Approved' status"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             SELECT id, name, message, status, created_at
@@ -144,7 +143,7 @@ def get_approved_messages():
 def create_message(name, message):
     """Creates a new message with 'Pending' status"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             INSERT INTO messages (name, message, status)
@@ -161,7 +160,7 @@ def create_message(name, message):
 def get_all_messages():
     """Gets all messages (for administration)"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             SELECT id, name, message, status, created_at
@@ -177,7 +176,7 @@ def get_all_messages():
 def get_pending_messages():
     """Gets only messages with 'Pending' status"""
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             SELECT id, name, message, status, created_at
@@ -210,7 +209,7 @@ def update_message_status(message_id, status):
         raise ValueError(f"Status must be one of {valid_statuses}")
 
     with get_db() as conn:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
             UPDATE messages
