@@ -7,14 +7,19 @@ from contextlib import contextmanager
 # Supabase PostgreSQL connection
 def get_db_connection():
     """Get PostgreSQL connection from Supabase"""
+    # Check if full connection string is provided (preferred for pooler)
+    conn_string = os.environ.get("SUPABASE_DB_CONNECTION_STRING")
+
+    if conn_string:
+        # Use full connection string if provided (should include pooler hostname)
+        conn = psycopg.connect(conn_string)
+        return conn
+
+    # Otherwise, construct connection string
     host = os.environ.get("SUPABASE_DB_HOST")
     dbname = os.environ.get("SUPABASE_DB_NAME", "postgres")
     user = os.environ.get("SUPABASE_DB_USER")
     password = os.environ.get("SUPABASE_DB_PASSWORD")
-
-    # Always use connection pooler port (6543) for Vercel/serverless compatibility
-    # Direct connection (5432) causes IPv6 issues in serverless environments
-    port = "6543"
 
     if not all([host, user, password]):
         raise ValueError(
@@ -22,8 +27,33 @@ def get_db_connection():
             "SUPABASE_DB_USER, and SUPABASE_DB_PASSWORD must be set"
         )
 
-    # Use connection string format
-    conn_string = f"host={host} dbname={dbname} user={user} password={password} port={port} sslmode=require"
+    # Convert direct hostname to pooler hostname for IPv4 compatibility
+    # Supabase pooler format: aws-0-[region].pooler.supabase.com
+    # Default to us-east-1 if region not specified (most common)
+    pooler_region = os.environ.get("SUPABASE_DB_REGION", "us-east-1")
+
+    # Extract project ref from hostname for pooler user format
+    project_ref = None
+    if host.startswith("db.") and host.endswith(".supabase.co"):
+        project_ref = host.replace("db.", "").replace(".supabase.co", "")
+        # Use Supabase pooler hostname (IPv4-compatible)
+        # Format: aws-0-[region].pooler.supabase.com
+        pooler_host = f"aws-0-{pooler_region}.pooler.supabase.com"
+        # Pooler requires user format: postgres.PROJECT_REF
+        if user == "postgres" and project_ref:
+            pooler_user = f"postgres.{project_ref}"
+        else:
+            pooler_user = user
+    else:
+        pooler_host = host
+        pooler_user = user
+
+    # Always use connection pooler port (6543) for Vercel/serverless compatibility
+    # Direct connection (5432) causes IPv6 issues in serverless environments
+    port = "6543"
+
+    # Use connection string format with pooler hostname and user
+    conn_string = f"host={pooler_host} dbname={dbname} user={pooler_user} password={password} port={port} sslmode=require"
 
     conn = psycopg.connect(conn_string)
     return conn
