@@ -4,7 +4,7 @@ import sys
 import os
 
 # Add parent directory to path to import db module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from db import get_all_scores
 
 
