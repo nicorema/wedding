@@ -4,9 +4,7 @@ import sys
 import os
 
 # Add parent directory to path to import db module
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from db import get_pending_messages
 
 
@@ -34,11 +32,18 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
         except Exception as e:
+            import traceback
+
             self.send_response(500)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode())
+            error_info = {
+                "error": str(e),
+                "type": type(e).__name__,
+                "traceback": traceback.format_exc(),
+            }
+            self.wfile.write(json.dumps(error_info, indent=2).encode())
 
     def do_OPTIONS(self):
         self.send_response(200)
