@@ -11,8 +11,16 @@ def get_db_connection():
     dbname = os.environ.get("SUPABASE_DB_NAME", "postgres")
     user = os.environ.get("SUPABASE_DB_USER")
     password = os.environ.get("SUPABASE_DB_PASSWORD")
-    # Use connection pooler port (6543) instead of direct connection (5432) for better compatibility
-    port = os.environ.get("SUPABASE_DB_PORT", "6543")
+
+    # Always use connection pooler port (6543) for Vercel/serverless compatibility
+    # Direct connection (5432) causes IPv6 issues in serverless environments
+    port = "6543"
+
+    if not all([host, user, password]):
+        raise ValueError(
+            "Missing required environment variables: SUPABASE_DB_HOST, "
+            "SUPABASE_DB_USER, and SUPABASE_DB_PASSWORD must be set"
+        )
 
     # Use connection string format
     conn_string = f"host={host} dbname={dbname} user={user} password={password} port={port} sslmode=require"
