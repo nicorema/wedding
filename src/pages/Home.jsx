@@ -31,7 +31,7 @@ function Home() {
 
         <div className={styles.contentGrid}>
           <Link to="/cuando" className={styles.contentCard}>
-            <div className={styles.cardIcon}>📅</div>
+            <div className={styles.cardIcon}>⏰</div>
             <h2 className={styles.cardTitle}>¿Cuándo?</h2>
             <p className={styles.cardDescription}>
               Guarda la fecha de nuestra celebración. Aquí encontrarás todos los
