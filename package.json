@@ -1,10 +1,11 @@
 {
-  "name": "matrimonio-website",
+  "name": "matrimonio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "vercel dev --yes --listen 3001 --local-config vercel.json",
     "build": "vite build",
     "preview": "vite preview"
   },
