@@ -8,8 +8,12 @@
       "dest": "/api/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|mp3))",
       "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }

@@ -7,14 +7,17 @@ from contextlib import contextmanager
 # Supabase PostgreSQL connection
 def get_db_connection():
     """Get PostgreSQL connection from Supabase"""
-    conn = psycopg.connect(
-        host=os.environ.get("SUPABASE_DB_HOST"),
-        dbname=os.environ.get("SUPABASE_DB_NAME", "postgres"),
-        user=os.environ.get("SUPABASE_DB_USER"),
-        password=os.environ.get("SUPABASE_DB_PASSWORD"),
-        port=os.environ.get("SUPABASE_DB_PORT", "5432"),
-        sslmode="require",
-    )
+    host = os.environ.get("SUPABASE_DB_HOST")
+    dbname = os.environ.get("SUPABASE_DB_NAME", "postgres")
+    user = os.environ.get("SUPABASE_DB_USER")
+    password = os.environ.get("SUPABASE_DB_PASSWORD")
+    # Use connection pooler port (6543) instead of direct connection (5432) for better compatibility
+    port = os.environ.get("SUPABASE_DB_PORT", "6543")
+
+    # Use connection string format
+    conn_string = f"host={host} dbname={dbname} user={user} password={password} port={port} sslmode=require"
+
+    conn = psycopg.connect(conn_string)
     return conn
 
 
