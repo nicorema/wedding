@@ -12,7 +12,14 @@ def get_db_connection():
 
     if conn_string:
         # Use full connection string if provided (should include pooler hostname)
-        conn = psycopg.connect(conn_string)
+        # If it's a URL, use it directly; if it's key-value pairs, convert to URL format
+        if conn_string.startswith("postgresql://") or conn_string.startswith(
+            "postgres://"
+        ):
+            conn = psycopg.connect(conn_string)
+        else:
+            # Try parsing as key-value format and convert to URL
+            conn = psycopg.connect(conn_string)
         return conn
 
     # Otherwise, construct connection string
@@ -34,7 +41,11 @@ def get_db_connection():
 
     # Extract project ref from hostname for pooler user format
     project_ref = None
+    pooler_host = host
+    pooler_user = user
+
     if host.startswith("db.") and host.endswith(".supabase.co"):
+        # Extract project ref: db.PROJECT_REF.supabase.co -> PROJECT_REF
         project_ref = host.replace("db.", "").replace(".supabase.co", "")
         # Use Supabase pooler hostname (IPv4-compatible)
         # Format: aws-0-[region].pooler.supabase.com
@@ -42,21 +53,75 @@ def get_db_connection():
         # Pooler requires user format: postgres.PROJECT_REF
         if user == "postgres" and project_ref:
             pooler_user = f"postgres.{project_ref}"
-        else:
-            pooler_user = user
-    else:
-        pooler_host = host
-        pooler_user = user
+        elif project_ref and not user.startswith("postgres."):
+            # If user is not in pooler format but we have project_ref, format it
+            pooler_user = (
+                f"{user}.{project_ref}"
+                if user != "postgres"
+                else f"postgres.{project_ref}"
+            )
+    elif ".pooler.supabase.com" in host:
+        # Already using pooler hostname
+        # If user doesn't have project ref format, we might need to extract it
+        # But if host is already pooler, user should already be formatted correctly
+        if user == "postgres" and not user.startswith("postgres."):
+            # Try to extract from original host if available
+            original_host = os.environ.get("SUPABASE_DB_ORIGINAL_HOST", host)
+            if original_host.startswith("db.") and original_host.endswith(
+                ".supabase.co"
+            ):
+                project_ref = original_host.replace("db.", "").replace(
+                    ".supabase.co", ""
+                )
+                pooler_user = f"postgres.{project_ref}"
 
     # Always use connection pooler port (6543) for Vercel/serverless compatibility
     # Direct connection (5432) causes IPv6 issues in serverless environments
-    port = "6543"
+    # If using pooler hostname, force port 6543
+    if ".pooler.supabase.com" in pooler_host or (
+        project_ref and pooler_host.startswith("aws-0-")
+    ):
+        port = "6543"
+    else:
+        port = os.environ.get("SUPABASE_DB_PORT", "5432")
 
-    # Use connection string format with pooler hostname and user
-    conn_string = f"host={pooler_host} dbname={dbname} user={pooler_user} password={password} port={port} sslmode=require"
+    # Use URL format for connection string (more reliable with psycopg)
+    # URL format: postgresql://user:password@host:port/dbname?sslmode=require
+    from urllib.parse import quote_plus
 
-    conn = psycopg.connect(conn_string)
-    return conn
+    encoded_password = quote_plus(password)
+    encoded_user = quote_plus(pooler_user)
+
+    conn_string = f"postgresql://{encoded_user}:{encoded_password}@{pooler_host}:{port}/{dbname}?sslmode=require"
+
+    try:
+        conn = psycopg.connect(conn_string)
+        return conn
+    except Exception as e:
+        # Provide helpful error message for debugging (without exposing password)
+        error_msg = str(e)
+        if (
+            "Tenant or user not found" in error_msg
+            or "password authentication failed" in error_msg.lower()
+        ):
+            debug_info = (
+                f"Connection attempt failed.\n"
+                f"Original host: {host}\n"
+                f"Pooler host: {pooler_host}\n"
+                f"Port: {port}\n"
+                f"User: {pooler_user}\n"
+                f"Database: {dbname}\n"
+                f"Project Ref: {project_ref or 'not extracted'}\n"
+                f"Region: {pooler_region}\n\n"
+                f"Troubleshooting:\n"
+                f"1. Verify project ref extraction: '{host}' -> '{project_ref or 'FAILED'}' (should be 'bbwfvxmpigugrdeachjs')\n"
+                f"2. Verify user format: should be 'postgres.{project_ref}' = 'postgres.{project_ref or 'PROJECT_REF'}'\n"
+                f"3. Check if region is correct (current: {pooler_region}). Set SUPABASE_DB_REGION if different.\n"
+                f"4. Verify password is correct in Vercel environment variables.\n"
+                f"5. Consider using SUPABASE_DB_CONNECTION_STRING from Supabase dashboard instead."
+            )
+            raise psycopg.OperationalError(f"{error_msg}\n\n{debug_info}") from e
+        raise
 
 
 @contextmanager
