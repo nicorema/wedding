@@ -14,9 +14,9 @@ from db import update_message_status
 class handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         try:
-            # Extract message_id from path
-            # Path format: /api/admin/messages/{id}/status
-            path_parts = [p for p in self.path.split("/") if p]
+            # Extract message_id from path (strip query string)
+            path_without_query = (self.path or "").split("?")[0]
+            path_parts = [p for p in path_without_query.strip("/").split("/") if p]
             message_id = None
 
             # Find the index of 'messages' and get the next part as ID
@@ -27,6 +27,12 @@ class handler(BaseHTTPRequestHandler):
                         message_id = int(path_parts[msg_index + 1])
                     except (ValueError, IndexError):
                         pass
+
+            # Fallback: last path segment as ID (e.g. Vercel dynamic route sends "/1" or "1")
+            if message_id is None and path_parts:
+                last_part = (path_parts[-1] or "").split("?")[0].strip()
+                if last_part.isdigit():
+                    message_id = int(last_part)
 
             if message_id is None:
                 self.send_response(400)

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AudioProvider } from "./contexts/AudioContext";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
@@ -74,6 +74,7 @@ function App() {
               </Layout>
             }
           />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AudioProvider>
