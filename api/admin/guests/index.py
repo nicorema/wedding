@@ -18,6 +18,8 @@ def serialize_guest(guest):
         "phone": guest["phone"],
         "companion_names": guest["companion_names"] or [],
         "group_name": guest["group_name"],
+        "attending": guest["attending"],
+        "allergies": guest["allergies"],
         "link_generated": guest["link_generated"],
         "link_sent": guest["link_sent"],
         "created_at": str(guest["created_at"]),
@@ -77,6 +79,10 @@ class handler(BaseHTTPRequestHandler):
                 (name or "").strip() for name in data.get("companion_names", [])
             ]
 
+            attending = data.get("attending")
+            if not isinstance(attending, bool):
+                attending = None
+
             new_guest = create_guest(
                 first_name=first_name,
                 last_name=clean(data.get("last_name")),
@@ -84,6 +90,8 @@ class handler(BaseHTTPRequestHandler):
                 phone=clean(data.get("phone")),
                 companion_names=companion_names,
                 group_name=clean(data.get("group_name")),
+                attending=attending,
+                allergies=clean(data.get("allergies")),
                 link_generated=bool(data.get("link_generated", False)),
                 link_sent=bool(data.get("link_sent", False)),
             )

@@ -115,6 +115,8 @@ def init_db():
                 phone TEXT,
                 companion_names TEXT[] NOT NULL DEFAULT '{}',
                 group_name TEXT,
+                attending BOOLEAN,
+                allergies TEXT,
                 link_generated BOOLEAN NOT NULL DEFAULT FALSE,
                 link_sent BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -130,6 +132,8 @@ def init_db():
         cursor.execute(
             "ALTER TABLE guests ADD COLUMN IF NOT EXISTS uuid UUID NOT NULL DEFAULT gen_random_uuid()"
         )
+        cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS attending BOOLEAN")
+        cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS allergies TEXT")
 
         # Indexes to improve performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_scores_time ON scores(time ASC)")
@@ -232,7 +236,8 @@ def get_guest_by_uuid(guest_uuid):
         cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
-            SELECT id, uuid, first_name, nickname, companion_names, group_name
+            SELECT id, uuid, first_name, nickname, companion_names, group_name,
+                   attending, allergies
             FROM guests
             WHERE uuid = %s
         """,
@@ -244,6 +249,29 @@ def get_guest_by_uuid(guest_uuid):
         return None
 
 
+def update_guest_rsvp(guest_uuid, attending, allergies=None):
+    """Updates a guest's RSVP response (public, via the invitation page)"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            """
+            UPDATE guests
+            SET attending = %s,
+                allergies = %s
+            WHERE uuid = %s
+            RETURNING id, uuid, first_name, nickname, companion_names, group_name,
+                      attending, allergies
+        """,
+            (attending, allergies, guest_uuid),
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError("Guest not found")
+
+        row = cursor.fetchone()
+        return dict(row)
+
+
 def get_all_guests():
     """Gets all guests ordered by first name"""
     with get_db() as conn:
@@ -251,7 +279,7 @@ def get_all_guests():
         cursor.execute(
             """
             SELECT id, uuid, first_name, last_name, nickname, phone,
-                   companion_names, group_name,
+                   companion_names, group_name, attending, allergies,
                    link_generated, link_sent, created_at
             FROM guests
             ORDER BY first_name ASC, last_name ASC
@@ -269,6 +297,8 @@ def create_guest(
     phone=None,
     companion_names=None,
     group_name=None,
+    attending=None,
+    allergies=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -279,12 +309,12 @@ def create_guest(
             """
             INSERT INTO guests (
                 first_name, last_name, nickname, phone,
-                companion_names, group_name,
+                companion_names, group_name, attending, allergies,
                 link_generated, link_sent
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, uuid, first_name, last_name, nickname, phone,
-                      companion_names, group_name,
+                      companion_names, group_name, attending, allergies,
                       link_generated, link_sent, created_at
         """,
             (
@@ -294,6 +324,8 @@ def create_guest(
                 phone,
                 companion_names or [],
                 group_name,
+                attending,
+                allergies,
                 link_generated,
                 link_sent,
             ),
@@ -311,6 +343,8 @@ def update_guest(
     phone=None,
     companion_names=None,
     group_name=None,
+    attending=None,
+    allergies=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -326,11 +360,13 @@ def update_guest(
                 phone = %s,
                 companion_names = %s,
                 group_name = %s,
+                attending = %s,
+                allergies = %s,
                 link_generated = %s,
                 link_sent = %s
             WHERE id = %s
             RETURNING id, uuid, first_name, last_name, nickname, phone,
-                      companion_names, group_name,
+                      companion_names, group_name, attending, allergies,
                       link_generated, link_sent, created_at
         """,
             (
@@ -340,6 +376,8 @@ def update_guest(
                 phone,
                 companion_names or [],
                 group_name,
+                attending,
+                allergies,
                 link_generated,
                 link_sent,
                 guest_id,
