@@ -112,9 +112,8 @@ def init_db():
                 last_name TEXT,
                 nickname TEXT,
                 phone TEXT,
-                has_plus_one_no_name BOOLEAN NOT NULL DEFAULT FALSE,
-                group_name TEXT,
-                group_size INTEGER,
+                has_companion BOOLEAN NOT NULL DEFAULT FALSE,
+                companion_name TEXT,
                 link_generated BOOLEAN NOT NULL DEFAULT FALSE,
                 link_sent BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -122,7 +121,10 @@ def init_db():
         """
         )
         cursor.execute(
-            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS group_size INTEGER"
+            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS has_companion BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+        cursor.execute(
+            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS companion_name TEXT"
         )
 
         # Indexes to improve performance
@@ -132,9 +134,6 @@ def init_db():
         )
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_guests_group ON guests(group_name)"
         )
 
 
@@ -230,7 +229,7 @@ def get_all_guests():
         cursor.execute(
             """
             SELECT id, first_name, last_name, nickname, phone,
-                   has_plus_one_no_name, group_name, group_size,
+                   has_companion, companion_name,
                    link_generated, link_sent, created_at
             FROM guests
             ORDER BY first_name ASC, last_name ASC
@@ -246,9 +245,8 @@ def create_guest(
     last_name=None,
     nickname=None,
     phone=None,
-    has_plus_one_no_name=False,
-    group_name=None,
-    group_size=None,
+    has_companion=False,
+    companion_name=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -259,12 +257,12 @@ def create_guest(
             """
             INSERT INTO guests (
                 first_name, last_name, nickname, phone,
-                has_plus_one_no_name, group_name, group_size,
+                has_companion, companion_name,
                 link_generated, link_sent
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, first_name, last_name, nickname, phone,
-                      has_plus_one_no_name, group_name, group_size,
+                      has_companion, companion_name,
                       link_generated, link_sent, created_at
         """,
             (
@@ -272,9 +270,8 @@ def create_guest(
                 last_name,
                 nickname,
                 phone,
-                has_plus_one_no_name,
-                group_name,
-                group_size,
+                has_companion,
+                companion_name,
                 link_generated,
                 link_sent,
             ),
@@ -290,9 +287,8 @@ def update_guest(
     last_name=None,
     nickname=None,
     phone=None,
-    has_plus_one_no_name=False,
-    group_name=None,
-    group_size=None,
+    has_companion=False,
+    companion_name=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -306,14 +302,13 @@ def update_guest(
                 last_name = %s,
                 nickname = %s,
                 phone = %s,
-                has_plus_one_no_name = %s,
-                group_name = %s,
-                group_size = %s,
+                has_companion = %s,
+                companion_name = %s,
                 link_generated = %s,
                 link_sent = %s
             WHERE id = %s
             RETURNING id, first_name, last_name, nickname, phone,
-                      has_plus_one_no_name, group_name, group_size,
+                      has_companion, companion_name,
                       link_generated, link_sent, created_at
         """,
             (
@@ -321,9 +316,8 @@ def update_guest(
                 last_name,
                 nickname,
                 phone,
-                has_plus_one_no_name,
-                group_name,
-                group_size,
+                has_companion,
+                companion_name,
                 link_generated,
                 link_sent,
                 guest_id,

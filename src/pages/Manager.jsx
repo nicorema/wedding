@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
 import styles from "./Manager.module.scss";
@@ -105,9 +105,8 @@ const emptyGuestForm = {
   last_name: "",
   nickname: "",
   phone: "",
-  has_plus_one_no_name: false,
-  group_name: "",
-  group_size: "",
+  has_companion: false,
+  companion_name: "",
   link_generated: false,
   link_sent: false,
 };
@@ -127,6 +126,8 @@ function Manager() {
   const [guestForm, setGuestForm] = useState(emptyGuestForm);
   const [editingGuestId, setEditingGuestId] = useState(null);
   const [deletingGuest, setDeletingGuest] = useState(null);
+  const [highlightedGuestId, setHighlightedGuestId] = useState(null);
+  const [copiedGuestId, setCopiedGuestId] = useState(null);
 
   // Query for pending messages
   const {
@@ -194,17 +195,19 @@ function Manager() {
   // Mutations for guests
   const createGuestMutation = useMutation({
     mutationFn: createGuest,
-    onSuccess: () => {
+    onSuccess: (newGuest) => {
       refetchGuests();
       closeGuestModal();
+      setHighlightedGuestId(newGuest.id);
     },
   });
 
   const updateGuestMutation = useMutation({
     mutationFn: updateGuest,
-    onSuccess: () => {
+    onSuccess: (updatedGuest) => {
       refetchGuests();
       closeGuestModal();
+      setHighlightedGuestId(updatedGuest.id);
     },
   });
 
@@ -228,9 +231,8 @@ function Manager() {
       last_name: guest.last_name || "",
       nickname: guest.nickname || "",
       phone: guest.phone || "",
-      has_plus_one_no_name: guest.has_plus_one_no_name || false,
-      group_name: guest.group_name || "",
-      group_size: guest.group_size ?? "",
+      has_companion: guest.has_companion || false,
+      companion_name: guest.companion_name || "",
       link_generated: guest.link_generated || false,
       link_sent: guest.link_sent || false,
     });
@@ -259,6 +261,39 @@ function Manager() {
     }
   };
 
+  const getGreetingName = (guest) => {
+    const ownName = guest.nickname || guest.first_name;
+    if (guest.companion_name) return `${ownName} y ${guest.companion_name}`;
+    return ownName;
+  };
+
+  const buildGuestMessage = (guest) => {
+    const name = getGreetingName(guest);
+    let message = `Hola ${name}`;
+    if (guest.has_companion && !guest.companion_name) {
+      message += " puedes llevar un +1";
+    }
+    return message;
+  };
+
+  const handleCopyGuestMessage = async (guest) => {
+    if (!guest.phone) return;
+
+    const digits = guest.phone.replace(/\D/g, "");
+    const message = buildGuestMessage(guest);
+    const waLink = `https://wa.me/${digits}?text=${encodeURIComponent(
+      message
+    )}`;
+
+    try {
+      await navigator.clipboard.writeText(waLink);
+      setCopiedGuestId(guest.id);
+      setTimeout(() => setCopiedGuestId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
   const handleDeleteGuestClick = (guest) => setDeletingGuest(guest);
   const cancelDeleteGuest = () => setDeletingGuest(null);
   const confirmDeleteGuest = () => {
@@ -267,32 +302,23 @@ function Manager() {
     }
   };
 
-  const totalGuests = (() => {
-    const groupRowCounts = {};
-    guests.forEach((guest) => {
-      if (guest.group_name) {
-        groupRowCounts[guest.group_name] =
-          (groupRowCounts[guest.group_name] || 0) + 1;
-      }
-    });
+  const totalGuests = guests.reduce(
+    (total, guest) => total + 1 + (guest.has_companion ? 1 : 0),
+    0
+  );
 
-    const countedGroups = new Set();
-    let total = 0;
+  useEffect(() => {
+    if (!highlightedGuestId) return;
+    if (!guests.some((guest) => guest.id === highlightedGuestId)) return;
 
-    guests.forEach((guest) => {
-      if (guest.has_plus_one_no_name) total += 1;
+    const row = document.getElementById(`guest-row-${highlightedGuestId}`);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
 
-      if (guest.group_name) {
-        if (countedGroups.has(guest.group_name)) return;
-        countedGroups.add(guest.group_name);
-        total += guest.group_size || groupRowCounts[guest.group_name] || 1;
-      } else {
-        total += 1;
-      }
-    });
-
-    return total;
-  })();
+    const timeout = setTimeout(() => setHighlightedGuestId(null), 2500);
+    return () => clearTimeout(timeout);
+  }, [guests, highlightedGuestId]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -559,31 +585,54 @@ function Manager() {
                           <th>Apellidos</th>
                           <th>Apodo</th>
                           <th>Teléfono</th>
-                          <th>Puede traer +1 sin confirmar</th>
-                          <th>Grupo</th>
+                          <th>Acompañante</th>
+                          <th>Generar mensaje</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {guests.map((guest) => (
-                          <tr key={guest.id}>
+                          <tr
+                            key={guest.id}
+                            id={`guest-row-${guest.id}`}
+                            className={
+                              guest.id === highlightedGuestId
+                                ? styles.highlightedRow
+                                : ""
+                            }
+                          >
                             <td className={styles.nameCell}>
                               {guest.first_name}
                             </td>
                             <td>{guest.last_name || "—"}</td>
                             <td>{guest.nickname || "—"}</td>
                             <td>{guest.phone || "—"}</td>
-                            <td className={styles.centerCell}>
-                              {guest.has_plus_one_no_name ? "✅" : "—"}
-                            </td>
                             <td>
-                              {guest.group_name
-                                ? `${guest.group_name}${
-                                    guest.group_size
-                                      ? ` (${guest.group_size} personas)`
-                                      : ""
-                                  }`
-                                : "—"}
+                              {guest.companion_name ? (
+                                guest.companion_name
+                              ) : guest.has_companion ? (
+                                <span className={styles.pendingCompanion}>
+                                  Por confirmar
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className={styles.centerCell}>
+                              <button
+                                className={styles.messageButton}
+                                onClick={() => handleCopyGuestMessage(guest)}
+                                disabled={!guest.phone}
+                                title={
+                                  guest.phone
+                                    ? "Copiar link de WhatsApp"
+                                    : "Sin teléfono"
+                                }
+                              >
+                                {copiedGuestId === guest.id
+                                  ? "✅ Copiado"
+                                  : "💬 Copiar"}
+                              </button>
                             </td>
                             <td>
                               <div className={styles.guestActions}>
@@ -679,31 +728,16 @@ function Manager() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.label}>
-                  Grupo de invitación (personas que reciben el mismo link,
-                  ej. una pareja)
+                  Nombre del acompañante (si ya se sabe, sea la pareja de un
+                  grupo o un +1 confirmado)
                 </label>
                 <input
                   type="text"
                   className={styles.input}
-                  placeholder="Ej: Alba y Alfredo"
-                  value={guestForm.group_name}
+                  placeholder="Ej: Alfredo García"
+                  value={guestForm.companion_name}
                   onChange={(e) =>
-                    handleGuestFormChange("group_name", e.target.value)
-                  }
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Número de personas en el grupo
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className={styles.input}
-                  placeholder="Ej: 2"
-                  value={guestForm.group_size}
-                  onChange={(e) =>
-                    handleGuestFormChange("group_size", e.target.value)
+                    handleGuestFormChange("companion_name", e.target.value)
                   }
                 />
               </div>
@@ -712,15 +746,12 @@ function Manager() {
                 <label className={styles.checkboxLabel}>
                   <input
                     type="checkbox"
-                    checked={guestForm.has_plus_one_no_name}
+                    checked={guestForm.has_companion}
                     onChange={(e) =>
-                      handleGuestFormChange(
-                        "has_plus_one_no_name",
-                        e.target.checked
-                      )
+                      handleGuestFormChange("has_companion", e.target.checked)
                     }
                   />
-                  Puede traer un acompañante sin nombre confirmado aún
+                  Puede traer acompañante (aunque aún no sepamos el nombre)
                 </label>
               </div>
 
