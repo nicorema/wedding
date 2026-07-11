@@ -120,6 +120,8 @@ const emptyGuestForm = {
   phone: "",
   companion_names: [],
   group_name: "",
+  attending: null,
+  allergies: "",
   link_generated: false,
   link_sent: false,
 };
@@ -147,6 +149,7 @@ function Manager() {
   const [deletingGuest, setDeletingGuest] = useState(null);
   const [highlightedGuestId, setHighlightedGuestId] = useState(null);
   const [copiedGuestId, setCopiedGuestId] = useState(null);
+  const [attendingFilter, setAttendingFilter] = useState("all"); // 'all' | 'yes' | 'no' | 'pending'
 
   // Query for pending messages
   const {
@@ -255,6 +258,8 @@ function Manager() {
           ? guest.companion_names
           : [],
       group_name: guest.group_name || "",
+      attending: guest.attending ?? null,
+      allergies: guest.allergies || "",
       link_generated: guest.link_generated || false,
       link_sent: guest.link_sent || false,
     });
@@ -320,6 +325,34 @@ function Manager() {
     return ownName;
   };
 
+  // Parses the "Nombre: Detalle | Otro Nombre: Detalle" format used when a
+  // party has more than one person. Falls back to treating the whole text
+  // as the primary guest's own answer (which is also exactly right for the
+  // solo case, where no name prefix is stored).
+  const parseAllergies = (guest) => {
+    const text = guest.allergies;
+    if (!text) return { self: null, byName: {} };
+
+    const parts = text.split(" | ").map((p) => p.trim());
+    const byName = {};
+    let allMatched = true;
+    for (const part of parts) {
+      const idx = part.indexOf(": ");
+      if (idx === -1) {
+        allMatched = false;
+        break;
+      }
+      byName[part.slice(0, idx)] = part.slice(idx + 2);
+    }
+
+    if (!allMatched) {
+      return { self: text, byName: {} };
+    }
+
+    const selfName = guest.nickname || guest.first_name;
+    return { self: byName[selfName] ?? null, byName };
+  };
+
   const buildGuestMessage = (guest) => {
     const name = getGreetingName(guest);
     let message = `Hola ${name}`;
@@ -335,13 +368,11 @@ function Manager() {
   };
 
   const handleCopyGuestMessage = async (guest) => {
-    if (!guest.phone) return;
-
-    const digits = guest.phone.replace(/\D/g, "");
     const message = buildGuestMessage(guest);
-    const waLink = `https://wa.me/${digits}?text=${encodeURIComponent(
-      message
-    )}`;
+    const digits = guest.phone ? guest.phone.replace(/\D/g, "") : "";
+    const waLink = digits
+      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
     try {
       await navigator.clipboard.writeText(waLink);
@@ -360,10 +391,29 @@ function Manager() {
     }
   };
 
+  const headcount = (guest) => 1 + (guest.companion_names?.length || 0);
+
   const totalGuests = guests.reduce(
-    (total, guest) => total + 1 + (guest.companion_names?.length || 0),
+    (total, guest) => total + headcount(guest),
     0
   );
+
+  const totalConfirmed = guests
+    .filter((guest) => guest.attending === true)
+    .reduce((total, guest) => total + headcount(guest), 0);
+
+  const totalDeclined = guests
+    .filter((guest) => guest.attending === false)
+    .reduce((total, guest) => total + headcount(guest), 0);
+
+  const totalWithAllergies = guests.filter((guest) => guest.allergies).length;
+
+  const filteredGuests = guests.filter((guest) => {
+    if (attendingFilter === "yes") return guest.attending === true;
+    if (attendingFilter === "no") return guest.attending === false;
+    if (attendingFilter === "pending") return guest.attending === null;
+    return true;
+  });
 
   useEffect(() => {
     if (!highlightedGuestId) return;
@@ -512,7 +562,7 @@ function Manager() {
             }`}
             onClick={() => setActiveTab("guests")}
           >
-            🧑‍🤝‍🧑 Invitados ({guests.length})
+            🧑‍🤝‍🧑 Invitados ({totalGuests})
           </button>
         </div>
 
@@ -618,6 +668,42 @@ function Manager() {
         {activeTab === "guests" && (
           <div className={styles.tabContent}>
             <div className={styles.guestsToolbar}>
+              <div className={styles.attendingFilters}>
+                <button
+                  className={`${styles.filterButton} ${
+                    attendingFilter === "all" ? styles.filterActive : ""
+                  }`}
+                  onClick={() => setAttendingFilter("all")}
+                >
+                  Todos ({guests.length})
+                </button>
+                <button
+                  className={`${styles.filterButton} ${
+                    attendingFilter === "yes" ? styles.filterActive : ""
+                  }`}
+                  onClick={() => setAttendingFilter("yes")}
+                >
+                  Confirmados (
+                  {guests.filter((g) => g.attending === true).length})
+                </button>
+                <button
+                  className={`${styles.filterButton} ${
+                    attendingFilter === "no" ? styles.filterActive : ""
+                  }`}
+                  onClick={() => setAttendingFilter("no")}
+                >
+                  No van ({guests.filter((g) => g.attending === false).length})
+                </button>
+                <button
+                  className={`${styles.filterButton} ${
+                    attendingFilter === "pending" ? styles.filterActive : ""
+                  }`}
+                  onClick={() => setAttendingFilter("pending")}
+                >
+                  Por confirmar (
+                  {guests.filter((g) => g.attending === null).length})
+                </button>
+              </div>
               <button
                 className={styles.addGuestButton}
                 onClick={openAddGuestModal}
@@ -632,6 +718,10 @@ function Manager() {
               <div className={styles.emptyState}>
                 <p>Aún no hay invitados registrados.</p>
               </div>
+            ) : filteredGuests.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p>Nadie coincide con este filtro.</p>
+              </div>
             ) : (
               <>
                 <div className={styles.guestsTableWrapper}>
@@ -645,17 +735,23 @@ function Manager() {
                           <th>Apodo</th>
                           <th>Teléfono</th>
                           <th>Grupo</th>
+                          <th>Confirmado</th>
+                          <th>Alergias</th>
                           <th>Generar mensaje</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {guests.map((guest) => {
+                        {filteredGuests.map((guest) => {
+                          const parsedAllergies = parseAllergies(guest);
                           const companionRows = (
                             guest.companion_names || []
                           ).map((name, index) => ({
                             key: index,
                             name: name || null,
+                            allergy: name
+                              ? parsedAllergies.byName[name] ?? null
+                              : null,
                           }));
 
                           return (
@@ -678,17 +774,32 @@ function Manager() {
                                 <td>{guest.nickname || "—"}</td>
                                 <td>{guest.phone || "—"}</td>
                                 <td>{guest.group_name || "—"}</td>
+                                <td
+                                  className={`${styles.centerCell} ${
+                                    guest.attending === true
+                                      ? styles.attendingYes
+                                      : guest.attending === false
+                                      ? styles.attendingNo
+                                      : styles.attendingPending
+                                  }`}
+                                >
+                                  {guest.attending === true
+                                    ? "Sí"
+                                    : guest.attending === false
+                                    ? "No"
+                                    : "Por confirmar"}
+                                </td>
+                                <td>{parsedAllergies.self || "—"}</td>
                                 <td className={styles.centerCell}>
                                   <button
                                     className={styles.messageButton}
                                     onClick={() =>
                                       handleCopyGuestMessage(guest)
                                     }
-                                    disabled={!guest.phone}
                                     title={
                                       guest.phone
                                         ? "Copiar link de WhatsApp"
-                                        : "Sin teléfono"
+                                        : "Sin teléfono — copia el mensaje igual"
                                     }
                                   >
                                     {copiedGuestId === guest.id
@@ -724,7 +835,8 @@ function Manager() {
                                   key={`${guest.id}-${companion.key}`}
                                   className={styles.companionRow}
                                 >
-                                  <td colSpan={8}>
+                                  <td>—</td>
+                                  <td className={styles.nameCell}>
                                     <span className={styles.companionIndent}>
                                       ↳{" "}
                                       {companion.name || (
@@ -736,6 +848,14 @@ function Manager() {
                                       )}
                                     </span>
                                   </td>
+                                  <td>—</td>
+                                  <td>—</td>
+                                  <td>—</td>
+                                  <td>—</td>
+                                  <td className={styles.centerCell}>—</td>
+                                  <td>{companion.allergy || "—"}</td>
+                                  <td>—</td>
+                                  <td>—</td>
                                 </tr>
                               ))}
                             </Fragment>
@@ -747,8 +867,18 @@ function Manager() {
                 </div>
 
                 <div className={styles.guestsTotal}>
-                  Total de invitados (contando los +1 aún sin nombre):{" "}
-                  <strong>{totalGuests}</strong>
+                  <span>
+                    Total invitados: <strong>{totalGuests}</strong>
+                  </span>
+                  <span>
+                    Confirmados: <strong>{totalConfirmed}</strong>
+                  </span>
+                  <span>
+                    No van: <strong>{totalDeclined}</strong>
+                  </span>
+                  <span>
+                    Con alergias: <strong>{totalWithAllergies}</strong>
+                  </span>
                 </div>
               </>
             )}
@@ -861,6 +991,45 @@ function Manager() {
                 >
                   + Agregar acompañante
                 </button>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Confirmado</label>
+                <select
+                  className={styles.input}
+                  value={
+                    guestForm.attending === null
+                      ? "unconfirmed"
+                      : guestForm.attending
+                      ? "yes"
+                      : "no"
+                  }
+                  onChange={(e) =>
+                    handleGuestFormChange(
+                      "attending",
+                      e.target.value === "unconfirmed"
+                        ? null
+                        : e.target.value === "yes"
+                    )
+                  }
+                >
+                  <option value="unconfirmed">Por confirmar</option>
+                  <option value="yes">Sí</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Alergias</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="Ej: alérgico a los mariscos"
+                  value={guestForm.allergies}
+                  onChange={(e) =>
+                    handleGuestFormChange("allergies", e.target.value)
+                  }
+                />
               </div>
 
               <div className={styles.modalActions}>
