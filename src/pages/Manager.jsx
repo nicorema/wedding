@@ -267,10 +267,32 @@ function Manager() {
     }
   };
 
-  const totalGuests = guests.reduce(
-    (total, guest) => total + 1 + (guest.has_plus_one_no_name ? 1 : 0),
-    0
-  );
+  const totalGuests = (() => {
+    const groupRowCounts = {};
+    guests.forEach((guest) => {
+      if (guest.group_name) {
+        groupRowCounts[guest.group_name] =
+          (groupRowCounts[guest.group_name] || 0) + 1;
+      }
+    });
+
+    const countedGroups = new Set();
+    let total = 0;
+
+    guests.forEach((guest) => {
+      if (guest.has_plus_one_no_name) total += 1;
+
+      if (guest.group_name) {
+        if (countedGroups.has(guest.group_name)) return;
+        countedGroups.add(guest.group_name);
+        total += guest.group_size || groupRowCounts[guest.group_name] || 1;
+      } else {
+        total += 1;
+      }
+    });
+
+    return total;
+  })();
 
   const handleLogin = (e) => {
     e.preventDefault();
