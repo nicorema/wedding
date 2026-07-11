@@ -17,7 +17,6 @@ def serialize_guest(guest):
         "last_name": guest["last_name"],
         "nickname": guest["nickname"],
         "phone": guest["phone"],
-        "has_companion": guest["has_companion"],
         "companion_names": guest["companion_names"] or [],
         "group_name": guest["group_name"],
         "link_generated": guest["link_generated"],
@@ -80,9 +79,7 @@ class handler(BaseHTTPRequestHandler):
                 return value or None
 
             companion_names = [
-                clean(name)
-                for name in data.get("companion_names", [])
-                if clean(name)
+                (name or "").strip() for name in data.get("companion_names", [])
             ]
 
             updated_guest = update_guest(
@@ -91,7 +88,6 @@ class handler(BaseHTTPRequestHandler):
                 last_name=clean(data.get("last_name")),
                 nickname=clean(data.get("nickname")),
                 phone=clean(data.get("phone")),
-                has_companion=bool(data.get("has_companion", False)),
                 companion_names=companion_names,
                 group_name=clean(data.get("group_name")),
                 link_generated=bool(data.get("link_generated", False)),

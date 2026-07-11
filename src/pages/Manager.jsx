@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
 import styles from "./Manager.module.scss";
@@ -105,8 +105,8 @@ const emptyGuestForm = {
   last_name: "",
   nickname: "",
   phone: "",
-  has_companion: false,
-  companion_name: "",
+  companion_names: [],
+  group_name: "",
   link_generated: false,
   link_sent: false,
 };
@@ -231,8 +231,11 @@ function Manager() {
       last_name: guest.last_name || "",
       nickname: guest.nickname || "",
       phone: guest.phone || "",
-      has_companion: guest.has_companion || false,
-      companion_name: guest.companion_name || "",
+      companion_names:
+        guest.companion_names && guest.companion_names.length
+          ? guest.companion_names
+          : [],
+      group_name: guest.group_name || "",
       link_generated: guest.link_generated || false,
       link_sent: guest.link_sent || false,
     });
@@ -250,27 +253,61 @@ function Manager() {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleCompanionNameChange = (index, value) => {
+    setGuestForm((prev) => {
+      const companion_names = [...prev.companion_names];
+      companion_names[index] = value;
+      return { ...prev, companion_names };
+    });
+  };
+
+  const addCompanionField = () => {
+    setGuestForm((prev) => ({
+      ...prev,
+      companion_names: [...prev.companion_names, ""],
+    }));
+  };
+
+  const removeCompanionField = (index) => {
+    setGuestForm((prev) => ({
+      ...prev,
+      companion_names: prev.companion_names.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleGuestFormSubmit = (e) => {
     e.preventDefault();
     if (!guestForm.first_name.trim()) return;
 
+    const guestData = {
+      ...guestForm,
+      companion_names: guestForm.companion_names.map((name) => name.trim()),
+    };
+
     if (guestModalMode === "edit" && editingGuestId) {
-      updateGuestMutation.mutate({ guestId: editingGuestId, guestData: guestForm });
+      updateGuestMutation.mutate({ guestId: editingGuestId, guestData });
     } else {
-      createGuestMutation.mutate(guestForm);
+      createGuestMutation.mutate(guestData);
     }
   };
 
   const getGreetingName = (guest) => {
+    if (guest.group_name) return guest.group_name;
     const ownName = guest.nickname || guest.first_name;
-    if (guest.companion_name) return `${ownName} y ${guest.companion_name}`;
+    const namedCompanions = (guest.companion_names || []).filter(Boolean);
+    if (namedCompanions.length) {
+      return `${ownName} y ${namedCompanions.join(", ")}`;
+    }
     return ownName;
   };
 
   const buildGuestMessage = (guest) => {
     const name = getGreetingName(guest);
     let message = `Hola ${name}`;
-    if (guest.has_companion && !guest.companion_name) {
+    const hasUnconfirmedCompanion = (guest.companion_names || []).some(
+      (companionName) => !companionName
+    );
+    if (hasUnconfirmedCompanion) {
       message += " puedes llevar un +1";
     }
     return message;
@@ -303,7 +340,7 @@ function Manager() {
   };
 
   const totalGuests = guests.reduce(
-    (total, guest) => total + 1 + (guest.has_companion ? 1 : 0),
+    (total, guest) => total + 1 + (guest.companion_names?.length || 0),
     0
   );
 
@@ -585,75 +622,98 @@ function Manager() {
                           <th>Apellidos</th>
                           <th>Apodo</th>
                           <th>Teléfono</th>
-                          <th>Acompañante</th>
                           <th>Generar mensaje</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {guests.map((guest) => (
-                          <tr
-                            key={guest.id}
-                            id={`guest-row-${guest.id}`}
-                            className={
-                              guest.id === highlightedGuestId
-                                ? styles.highlightedRow
-                                : ""
-                            }
-                          >
-                            <td className={styles.nameCell}>
-                              {guest.first_name}
-                            </td>
-                            <td>{guest.last_name || "—"}</td>
-                            <td>{guest.nickname || "—"}</td>
-                            <td>{guest.phone || "—"}</td>
-                            <td>
-                              {guest.companion_name ? (
-                                guest.companion_name
-                              ) : guest.has_companion ? (
-                                <span className={styles.pendingCompanion}>
-                                  Por confirmar
-                                </span>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className={styles.centerCell}>
-                              <button
-                                className={styles.messageButton}
-                                onClick={() => handleCopyGuestMessage(guest)}
-                                disabled={!guest.phone}
-                                title={
-                                  guest.phone
-                                    ? "Copiar link de WhatsApp"
-                                    : "Sin teléfono"
+                        {guests.map((guest) => {
+                          const companionRows = (
+                            guest.companion_names || []
+                          ).map((name, index) => ({
+                            key: index,
+                            name: name || null,
+                          }));
+
+                          return (
+                            <Fragment key={guest.id}>
+                              <tr
+                                id={`guest-row-${guest.id}`}
+                                className={
+                                  guest.id === highlightedGuestId
+                                    ? styles.highlightedRow
+                                    : ""
                                 }
                               >
-                                {copiedGuestId === guest.id
-                                  ? "✅ Copiado"
-                                  : "💬 Copiar"}
-                              </button>
-                            </td>
-                            <td>
-                              <div className={styles.guestActions}>
-                                <button
-                                  className={styles.editButton}
-                                  onClick={() => openEditGuestModal(guest)}
-                                  title="Editar"
+                                <td className={styles.nameCell}>
+                                  {guest.first_name}
+                                </td>
+                                <td>{guest.last_name || "—"}</td>
+                                <td>{guest.nickname || "—"}</td>
+                                <td>{guest.phone || "—"}</td>
+                                <td className={styles.centerCell}>
+                                  <button
+                                    className={styles.messageButton}
+                                    onClick={() =>
+                                      handleCopyGuestMessage(guest)
+                                    }
+                                    disabled={!guest.phone}
+                                    title={
+                                      guest.phone
+                                        ? "Copiar link de WhatsApp"
+                                        : "Sin teléfono"
+                                    }
+                                  >
+                                    {copiedGuestId === guest.id
+                                      ? "✅ Copiado"
+                                      : "💬 Copiar"}
+                                  </button>
+                                </td>
+                                <td>
+                                  <div className={styles.guestActions}>
+                                    <button
+                                      className={styles.editButton}
+                                      onClick={() =>
+                                        openEditGuestModal(guest)
+                                      }
+                                      title="Editar"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      className={styles.deleteButton}
+                                      onClick={() =>
+                                        handleDeleteGuestClick(guest)
+                                      }
+                                      title="Eliminar"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {companionRows.map((companion) => (
+                                <tr
+                                  key={`${guest.id}-${companion.key}`}
+                                  className={styles.companionRow}
                                 >
-                                  ✏️
-                                </button>
-                                <button
-                                  className={styles.deleteButton}
-                                  onClick={() => handleDeleteGuestClick(guest)}
-                                  title="Eliminar"
-                                >
-                                  🗑️
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                  <td colSpan={6}>
+                                    <span className={styles.companionIndent}>
+                                      ↳{" "}
+                                      {companion.name || (
+                                        <span
+                                          className={styles.pendingCompanion}
+                                        >
+                                          Acompañante por confirmar
+                                        </span>
+                                      )}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -728,31 +788,52 @@ function Manager() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.label}>
-                  Nombre del acompañante (si ya se sabe, sea la pareja de un
-                  grupo o un +1 confirmado)
+                  Nombre cariñoso del grupo (para el saludo de WhatsApp)
                 </label>
                 <input
                   type="text"
                   className={styles.input}
-                  placeholder="Ej: Alfredo García"
-                  value={guestForm.companion_name}
+                  placeholder="Ej: Alba y Alfredo"
+                  value={guestForm.group_name}
                   onChange={(e) =>
-                    handleGuestFormChange("companion_name", e.target.value)
+                    handleGuestFormChange("group_name", e.target.value)
                   }
                 />
               </div>
 
-              <div className={styles.checkboxRow}>
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={guestForm.has_companion}
-                    onChange={(e) =>
-                      handleGuestFormChange("has_companion", e.target.checked)
-                    }
-                  />
-                  Puede traer acompañante (aunque aún no sepamos el nombre)
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Acompañante(s) — deja el campo vacío si aún no sabes el
+                  nombre
                 </label>
+                {guestForm.companion_names.map((name, index) => (
+                  <div key={index} className={styles.companionInputRow}>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      placeholder="Ej: Alfredo García"
+                      value={name}
+                      onChange={(e) =>
+                        handleCompanionNameChange(index, e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeCompanionButton}
+                      onClick={() => removeCompanionField(index)}
+                      title="Quitar"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className={styles.addCompanionButton}
+                  onClick={addCompanionField}
+                >
+                  + Agregar acompañante
+                </button>
               </div>
 
               <div className={styles.modalActions}>
