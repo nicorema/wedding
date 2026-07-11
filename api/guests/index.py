@@ -6,7 +6,7 @@ import uuid as uuid_module
 import urllib.parse
 
 # Add parent directory to path to import db module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from db import get_guest_by_uuid
 
 
