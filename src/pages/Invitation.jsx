@@ -36,7 +36,7 @@ function Invitation() {
       return;
     }
 
-    fetch(`/api/guests/${uuid}`)
+    fetch(`/api/guests?uuid=${encodeURIComponent(uuid)}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Guest not found");

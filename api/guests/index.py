@@ -3,30 +3,19 @@ import json
 import sys
 import os
 import uuid as uuid_module
+import urllib.parse
 
 # Add parent directory to path to import db module
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from db import get_guest_by_uuid
-
-
-def extract_uuid(path):
-    path_without_query = (path or "").split("?")[0]
-    path_parts = [p for p in path_without_query.strip("/").split("/") if p]
-
-    if "guests" in path_parts:
-        idx = path_parts.index("guests")
-        if idx + 1 < len(path_parts):
-            return path_parts[idx + 1]
-
-    return path_parts[-1] if path_parts else None
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            raw_uuid = extract_uuid(self.path)
+            parsed = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed.query)
+            raw_uuid = (query.get("uuid") or [None])[0]
 
             try:
                 guest_uuid = str(uuid_module.UUID(raw_uuid))
