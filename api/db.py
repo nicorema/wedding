@@ -114,11 +114,15 @@ def init_db():
                 phone TEXT,
                 has_plus_one_no_name BOOLEAN NOT NULL DEFAULT FALSE,
                 group_name TEXT,
+                group_size INTEGER,
                 link_generated BOOLEAN NOT NULL DEFAULT FALSE,
                 link_sent BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """
+        )
+        cursor.execute(
+            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS group_size INTEGER"
         )
 
         # Indexes to improve performance
@@ -226,8 +230,8 @@ def get_all_guests():
         cursor.execute(
             """
             SELECT id, first_name, last_name, nickname, phone,
-                   has_plus_one_no_name, group_name, link_generated, link_sent,
-                   created_at
+                   has_plus_one_no_name, group_name, group_size,
+                   link_generated, link_sent, created_at
             FROM guests
             ORDER BY first_name ASC, last_name ASC
         """
@@ -244,6 +248,7 @@ def create_guest(
     phone=None,
     has_plus_one_no_name=False,
     group_name=None,
+    group_size=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -254,12 +259,13 @@ def create_guest(
             """
             INSERT INTO guests (
                 first_name, last_name, nickname, phone,
-                has_plus_one_no_name, group_name, link_generated, link_sent
+                has_plus_one_no_name, group_name, group_size,
+                link_generated, link_sent
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, first_name, last_name, nickname, phone,
-                      has_plus_one_no_name, group_name, link_generated, link_sent,
-                      created_at
+                      has_plus_one_no_name, group_name, group_size,
+                      link_generated, link_sent, created_at
         """,
             (
                 first_name,
@@ -268,6 +274,7 @@ def create_guest(
                 phone,
                 has_plus_one_no_name,
                 group_name,
+                group_size,
                 link_generated,
                 link_sent,
             ),
@@ -285,6 +292,7 @@ def update_guest(
     phone=None,
     has_plus_one_no_name=False,
     group_name=None,
+    group_size=None,
     link_generated=False,
     link_sent=False,
 ):
@@ -300,12 +308,13 @@ def update_guest(
                 phone = %s,
                 has_plus_one_no_name = %s,
                 group_name = %s,
+                group_size = %s,
                 link_generated = %s,
                 link_sent = %s
             WHERE id = %s
             RETURNING id, first_name, last_name, nickname, phone,
-                      has_plus_one_no_name, group_name, link_generated, link_sent,
-                      created_at
+                      has_plus_one_no_name, group_name, group_size,
+                      link_generated, link_sent, created_at
         """,
             (
                 first_name,
@@ -314,6 +323,7 @@ def update_guest(
                 phone,
                 has_plus_one_no_name,
                 group_name,
+                group_size,
                 link_generated,
                 link_sent,
                 guest_id,

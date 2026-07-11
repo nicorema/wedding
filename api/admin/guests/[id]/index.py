@@ -19,6 +19,7 @@ def serialize_guest(guest):
         "phone": guest["phone"],
         "has_plus_one_no_name": guest["has_plus_one_no_name"],
         "group_name": guest["group_name"],
+        "group_size": guest["group_size"],
         "link_generated": guest["link_generated"],
         "link_sent": guest["link_sent"],
         "created_at": str(guest["created_at"]),
@@ -78,6 +79,12 @@ class handler(BaseHTTPRequestHandler):
                 value = (value or "").strip()
                 return value or None
 
+            group_size = data.get("group_size")
+            try:
+                group_size = int(group_size) if group_size not in (None, "") else None
+            except (TypeError, ValueError):
+                group_size = None
+
             updated_guest = update_guest(
                 guest_id,
                 first_name=first_name,
@@ -86,6 +93,7 @@ class handler(BaseHTTPRequestHandler):
                 phone=clean(data.get("phone")),
                 has_plus_one_no_name=bool(data.get("has_plus_one_no_name", False)),
                 group_name=clean(data.get("group_name")),
+                group_size=group_size,
                 link_generated=bool(data.get("link_generated", False)),
                 link_sent=bool(data.get("link_sent", False)),
             )

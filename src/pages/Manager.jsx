@@ -107,6 +107,7 @@ const emptyGuestForm = {
   phone: "",
   has_plus_one_no_name: false,
   group_name: "",
+  group_size: "",
   link_generated: false,
   link_sent: false,
 };
@@ -229,6 +230,7 @@ function Manager() {
       phone: guest.phone || "",
       has_plus_one_no_name: guest.has_plus_one_no_name || false,
       group_name: guest.group_name || "",
+      group_size: guest.group_size ?? "",
       link_generated: guest.link_generated || false,
       link_sent: guest.link_sent || false,
     });
@@ -536,7 +538,7 @@ function Manager() {
                           <th>Apodo</th>
                           <th>Teléfono</th>
                           <th>Puede traer +1 sin confirmar</th>
-                          <th>Grupo de invitación</th>
+                          <th>Grupo</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
@@ -552,7 +554,15 @@ function Manager() {
                             <td className={styles.centerCell}>
                               {guest.has_plus_one_no_name ? "✅" : "—"}
                             </td>
-                            <td>{guest.group_name || "—"}</td>
+                            <td>
+                              {guest.group_name
+                                ? `${guest.group_name}${
+                                    guest.group_size
+                                      ? ` (${guest.group_size} personas)`
+                                      : ""
+                                  }`
+                                : "—"}
+                            </td>
                             <td>
                               <div className={styles.guestActions}>
                                 <button
@@ -657,6 +667,21 @@ function Manager() {
                   value={guestForm.group_name}
                   onChange={(e) =>
                     handleGuestFormChange("group_name", e.target.value)
+                  }
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Número de personas en el grupo
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  placeholder="Ej: 2"
+                  value={guestForm.group_size}
+                  onChange={(e) =>
+                    handleGuestFormChange("group_size", e.target.value)
                   }
                 />
               </div>
