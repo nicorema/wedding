@@ -249,21 +249,36 @@ def get_guest_by_uuid(guest_uuid):
         return None
 
 
-def update_guest_rsvp(guest_uuid, attending, allergies=None):
+def update_guest_rsvp(guest_uuid, attending, allergies=None, companion_names=None):
     """Updates a guest's RSVP response (public, via the invitation page)"""
     with get_db() as conn:
         cursor = conn.cursor(row_factory=dict_row)
-        cursor.execute(
-            """
-            UPDATE guests
-            SET attending = %s,
-                allergies = %s
-            WHERE uuid = %s
-            RETURNING id, uuid, first_name, nickname, companion_names, group_name,
-                      attending, allergies
-        """,
-            (attending, allergies, guest_uuid),
-        )
+
+        if companion_names is not None:
+            cursor.execute(
+                """
+                UPDATE guests
+                SET attending = %s,
+                    allergies = %s,
+                    companion_names = %s
+                WHERE uuid = %s
+                RETURNING id, uuid, first_name, nickname, companion_names, group_name,
+                          attending, allergies
+            """,
+                (attending, allergies, companion_names, guest_uuid),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE guests
+                SET attending = %s,
+                    allergies = %s
+                WHERE uuid = %s
+                RETURNING id, uuid, first_name, nickname, companion_names, group_name,
+                          attending, allergies
+            """,
+                (attending, allergies, guest_uuid),
+            )
 
         if cursor.rowcount == 0:
             raise ValueError("Guest not found")

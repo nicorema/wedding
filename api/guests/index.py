@@ -97,7 +97,15 @@ class handler(BaseHTTPRequestHandler):
 
             allergies = (data.get("allergies") or "").strip() or None
 
-            updated_guest = update_guest_rsvp(guest_uuid, attending, allergies)
+            companion_names = data.get("companion_names")
+            if companion_names is not None:
+                companion_names = [
+                    (name or "").strip() for name in companion_names
+                ]
+
+            updated_guest = update_guest_rsvp(
+                guest_uuid, attending, allergies, companion_names
+            )
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
