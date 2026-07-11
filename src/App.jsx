@@ -10,6 +10,7 @@ import Photos from "./pages/Photos";
 import Messages from "./pages/Messages";
 import Details from "./pages/Details";
 import Manager from "./pages/Manager";
+import Invitation from "./pages/Invitation";
 
 function App() {
   return (
@@ -17,7 +18,12 @@ function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-          <Route path="/manager" element={<Manager />} />
+          <Route
+            path="/manager"
+            element={<Navigate to="/manager/mensajes" replace />}
+          />
+          <Route path="/manager/:section" element={<Manager />} />
+          <Route path="/invitacion" element={<Invitation />} />
           <Route
             path="/"
             element={

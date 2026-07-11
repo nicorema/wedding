@@ -226,6 +226,24 @@ def create_message(name, message):
         return dict(row)
 
 
+def get_guest_by_uuid(guest_uuid):
+    """Gets a single guest by uuid (public lookup for the invitation page)"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            """
+            SELECT id, uuid, first_name, nickname, companion_names, group_name
+            FROM guests
+            WHERE uuid = %s
+        """,
+            (guest_uuid,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+
+
 def get_all_guests():
     """Gets all guests ordered by first name"""
     with get_db() as conn:

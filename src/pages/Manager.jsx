@@ -329,6 +329,8 @@ function Manager() {
     if (hasUnconfirmedCompanion) {
       message += " puedes llevar un +1";
     }
+    const invitationUrl = `${window.location.origin}/invitacion?uuid=${guest.uuid}`;
+    message += ` ${invitationUrl}`;
     return message;
   };
 
