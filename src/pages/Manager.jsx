@@ -50,6 +50,67 @@ const getAllScores = async () => {
   return response.json();
 };
 
+// API functions for guests
+const getAllGuests = async () => {
+  const response = await fetch("/api/admin/guests");
+  if (!response.ok) {
+    throw new Error("Failed to fetch guests");
+  }
+  return response.json();
+};
+
+const createGuest = async (guestData) => {
+  const response = await fetch("/api/admin/guests", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(guestData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to create guest");
+  }
+  return response.json();
+};
+
+const updateGuest = async ({ guestId, guestData }) => {
+  const response = await fetch(`/api/admin/guests/${guestId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(guestData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update guest");
+  }
+  return response.json();
+};
+
+const deleteGuest = async (guestId) => {
+  const response = await fetch(`/api/admin/guests/${guestId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to delete guest");
+  }
+  return response.json();
+};
+
+const emptyGuestForm = {
+  first_name: "",
+  last_name: "",
+  nickname: "",
+  phone: "",
+  has_plus_one_no_name: false,
+  group_name: "",
+  link_generated: false,
+  link_sent: false,
+};
+
 function Manager() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Check if already authenticated in sessionStorage
@@ -58,7 +119,13 @@ function Manager() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab] = useState("messages"); // 'messages' or 'ranking'
+  const [activeTab, setActiveTab] = useState("messages"); // 'messages', 'ranking' or 'guests'
+
+  // Guests modal state
+  const [guestModalMode, setGuestModalMode] = useState(null); // null | 'add' | 'edit'
+  const [guestForm, setGuestForm] = useState(emptyGuestForm);
+  const [editingGuestId, setEditingGuestId] = useState(null);
+  const [deletingGuest, setDeletingGuest] = useState(null);
 
   // Query for pending messages
   const {
@@ -88,6 +155,19 @@ function Manager() {
     refetchOnWindowFocus: false, // Don't refetch when switching tabs
   });
 
+  // Query for all guests
+  const {
+    data: guests = [],
+    isLoading: isLoadingGuests,
+    refetch: refetchGuests,
+  } = useQuery({
+    queryKey: ["admin", "guests"],
+    queryFn: getAllGuests,
+    enabled: isAuthenticated && activeTab === "guests",
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   const queryClient = useQueryClient();
 
   // Mutation for updating message status
@@ -109,6 +189,86 @@ function Manager() {
       refetch();
     },
   });
+
+  // Mutations for guests
+  const createGuestMutation = useMutation({
+    mutationFn: createGuest,
+    onSuccess: () => {
+      refetchGuests();
+      closeGuestModal();
+    },
+  });
+
+  const updateGuestMutation = useMutation({
+    mutationFn: updateGuest,
+    onSuccess: () => {
+      refetchGuests();
+      closeGuestModal();
+    },
+  });
+
+  const deleteGuestMutation = useMutation({
+    mutationFn: deleteGuest,
+    onSuccess: () => {
+      refetchGuests();
+      setDeletingGuest(null);
+    },
+  });
+
+  const openAddGuestModal = () => {
+    setGuestForm(emptyGuestForm);
+    setEditingGuestId(null);
+    setGuestModalMode("add");
+  };
+
+  const openEditGuestModal = (guest) => {
+    setGuestForm({
+      first_name: guest.first_name || "",
+      last_name: guest.last_name || "",
+      nickname: guest.nickname || "",
+      phone: guest.phone || "",
+      has_plus_one_no_name: guest.has_plus_one_no_name || false,
+      group_name: guest.group_name || "",
+      link_generated: guest.link_generated || false,
+      link_sent: guest.link_sent || false,
+    });
+    setEditingGuestId(guest.id);
+    setGuestModalMode("edit");
+  };
+
+  const closeGuestModal = () => {
+    setGuestModalMode(null);
+    setEditingGuestId(null);
+    setGuestForm(emptyGuestForm);
+  };
+
+  const handleGuestFormChange = (field, value) => {
+    setGuestForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleGuestFormSubmit = (e) => {
+    e.preventDefault();
+    if (!guestForm.first_name.trim()) return;
+
+    if (guestModalMode === "edit" && editingGuestId) {
+      updateGuestMutation.mutate({ guestId: editingGuestId, guestData: guestForm });
+    } else {
+      createGuestMutation.mutate(guestForm);
+    }
+  };
+
+  const handleDeleteGuestClick = (guest) => setDeletingGuest(guest);
+  const cancelDeleteGuest = () => setDeletingGuest(null);
+  const confirmDeleteGuest = () => {
+    if (deletingGuest) {
+      deleteGuestMutation.mutate(deletingGuest.id);
+    }
+  };
+
+  const totalGuests = guests.reduce(
+    (total, guest) => total + 1 + (guest.has_plus_one_no_name ? 1 : 0),
+    0
+  );
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -238,6 +398,14 @@ function Manager() {
           >
             🏆 Ranking ({scores.length})
           </button>
+          <button
+            className={`${styles.tab} ${
+              activeTab === "guests" ? styles.activeTab : ""
+            }`}
+            onClick={() => setActiveTab("guests")}
+          >
+            🧑‍🤝‍🧑 Invitados ({guests.length})
+          </button>
         </div>
 
         {/* Messages Tab */}
@@ -337,7 +505,258 @@ function Manager() {
             )}
           </div>
         )}
+
+        {/* Guests Tab */}
+        {activeTab === "guests" && (
+          <div className={styles.tabContent}>
+            <div className={styles.guestsToolbar}>
+              <button
+                className={styles.addGuestButton}
+                onClick={openAddGuestModal}
+              >
+                + Agregar invitado
+              </button>
+            </div>
+
+            {isLoadingGuests ? (
+              <div className={styles.loading}>Cargando invitados...</div>
+            ) : guests.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p>Aún no hay invitados registrados.</p>
+              </div>
+            ) : (
+              <>
+                <div className={styles.rankingTable}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Apellidos</th>
+                        <th>Apodo</th>
+                        <th>Teléfono</th>
+                        <th>Plus one sin nombre</th>
+                        <th>Grupo de envío</th>
+                        <th>Link generado</th>
+                        <th>Link enviado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {guests.map((guest) => (
+                        <tr key={guest.id}>
+                          <td className={styles.nameCell}>
+                            {guest.first_name}
+                          </td>
+                          <td>{guest.last_name || "—"}</td>
+                          <td>{guest.nickname || "—"}</td>
+                          <td>{guest.phone || "—"}</td>
+                          <td className={styles.centerCell}>
+                            {guest.has_plus_one_no_name ? "✅" : "—"}
+                          </td>
+                          <td>{guest.group_name || "—"}</td>
+                          <td className={styles.centerCell}>
+                            {guest.link_generated ? "✅" : "—"}
+                          </td>
+                          <td className={styles.centerCell}>
+                            {guest.link_sent ? "✅" : "—"}
+                          </td>
+                          <td>
+                            <div className={styles.guestActions}>
+                              <button
+                                className={styles.editButton}
+                                onClick={() => openEditGuestModal(guest)}
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className={styles.deleteButton}
+                                onClick={() => handleDeleteGuestClick(guest)}
+                                title="Eliminar"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className={styles.guestsTotal}>
+                  Total de invitados (incluyendo plus ones sin nombre):{" "}
+                  <strong>{totalGuests}</strong>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Add / Edit Guest Modal */}
+      {guestModalMode && (
+        <div className={styles.modalOverlay} onClick={closeGuestModal}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className={styles.modalTitle}>
+              {guestModalMode === "edit" ? "Editar invitado" : "Agregar invitado"}
+            </h2>
+            <form onSubmit={handleGuestFormSubmit} className={styles.guestForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Nombre</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={guestForm.first_name}
+                  onChange={(e) =>
+                    handleGuestFormChange("first_name", e.target.value)
+                  }
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Apellidos</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={guestForm.last_name}
+                  onChange={(e) =>
+                    handleGuestFormChange("last_name", e.target.value)
+                  }
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Apodo</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={guestForm.nickname}
+                  onChange={(e) =>
+                    handleGuestFormChange("nickname", e.target.value)
+                  }
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Teléfono</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={guestForm.phone}
+                  onChange={(e) =>
+                    handleGuestFormChange("phone", e.target.value)
+                  }
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Grupo de envío (para mandar el link en pareja o grupo)
+                </label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="Ej: Alba y Alfredo"
+                  value={guestForm.group_name}
+                  onChange={(e) =>
+                    handleGuestFormChange("group_name", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className={styles.checkboxRow}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={guestForm.has_plus_one_no_name}
+                    onChange={(e) =>
+                      handleGuestFormChange(
+                        "has_plus_one_no_name",
+                        e.target.checked
+                      )
+                    }
+                  />
+                  Tiene plus one sin nombre
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={guestForm.link_generated}
+                    onChange={(e) =>
+                      handleGuestFormChange("link_generated", e.target.checked)
+                    }
+                  />
+                  Link generado
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={guestForm.link_sent}
+                    onChange={(e) =>
+                      handleGuestFormChange("link_sent", e.target.checked)
+                    }
+                  />
+                  Link enviado
+                </label>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={closeGuestModal}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.saveButton}
+                  disabled={
+                    createGuestMutation.isLoading || updateGuestMutation.isLoading
+                  }
+                >
+                  {guestModalMode === "edit"
+                    ? "Guardar cambios"
+                    : "Agregar invitado"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Guest Confirmation Modal */}
+      {deletingGuest && (
+        <div className={styles.modalOverlay} onClick={cancelDeleteGuest}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className={styles.modalTitle}>¿Eliminar invitado?</h2>
+            <p className={styles.confirmText}>
+              Esta acción eliminará a{" "}
+              <strong>
+                {deletingGuest.first_name} {deletingGuest.last_name}
+              </strong>{" "}
+              de la lista de invitados. No se puede deshacer.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelButton} onClick={cancelDeleteGuest}>
+                Cancelar
+              </button>
+              <button
+                className={styles.confirmDeleteButton}
+                onClick={confirmDeleteGuest}
+                disabled={deleteGuestMutation.isLoading}
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }

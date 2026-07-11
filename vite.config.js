@@ -8,9 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5001',
+        target: 'https://wedding-flax-two.vercel.app',
         changeOrigin: true,
-        secure: false,
+        secure: true,
         ws: true, // Enable websocket proxying
       },
     },

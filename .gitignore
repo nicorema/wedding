@@ -17,6 +17,7 @@ backend/*.db
 backend/*.db-journal
 backend/venv/
 backend/__pycache__/
+__pycache__/
 
 # Editor directories and files
 .vscode/*
