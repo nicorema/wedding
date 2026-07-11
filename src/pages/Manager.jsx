@@ -159,7 +159,7 @@ function Manager() {
   } = useQuery({
     queryKey: ["admin", "pending-messages"],
     queryFn: getPendingMessages,
-    enabled: isAuthenticated && activeTab === "messages", // Only fetch when authenticated and on messages tab
+    enabled: isAuthenticated, // Fetch as soon as Manager mounts, not just on this tab
     staleTime: 1 * 60 * 1000, // 1 minute - admin needs fresher data
     refetchInterval: 60000, // Refetch every 60 seconds (reduced from 30s)
     refetchOnWindowFocus: false, // Don't refetch when switching tabs
@@ -173,7 +173,7 @@ function Manager() {
   } = useQuery({
     queryKey: ["admin", "scores"],
     queryFn: getAllScores,
-    enabled: isAuthenticated && activeTab === "ranking", // Only fetch when authenticated and on ranking tab
+    enabled: isAuthenticated, // Fetch as soon as Manager mounts, not just on this tab
     staleTime: 2 * 60 * 1000, // 2 minutes - scores don't change that often
     refetchInterval: 120000, // Refetch every 2 minutes (reduced from 30s)
     refetchOnWindowFocus: false, // Don't refetch when switching tabs
@@ -187,7 +187,7 @@ function Manager() {
   } = useQuery({
     queryKey: ["admin", "guests"],
     queryFn: getAllGuests,
-    enabled: isAuthenticated && activeTab === "guests",
+    enabled: isAuthenticated, // Fetch as soon as Manager mounts, not just on this tab
     staleTime: 1 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
