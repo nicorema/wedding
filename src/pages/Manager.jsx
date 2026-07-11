@@ -526,66 +526,60 @@ function Manager() {
               </div>
             ) : (
               <>
-                <div className={styles.rankingTable}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Nombre</th>
-                        <th>Apellidos</th>
-                        <th>Apodo</th>
-                        <th>Teléfono</th>
-                        <th>Plus one sin nombre</th>
-                        <th>Grupo de envío</th>
-                        <th>Link generado</th>
-                        <th>Link enviado</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {guests.map((guest) => (
-                        <tr key={guest.id}>
-                          <td className={styles.nameCell}>
-                            {guest.first_name}
-                          </td>
-                          <td>{guest.last_name || "—"}</td>
-                          <td>{guest.nickname || "—"}</td>
-                          <td>{guest.phone || "—"}</td>
-                          <td className={styles.centerCell}>
-                            {guest.has_plus_one_no_name ? "✅" : "—"}
-                          </td>
-                          <td>{guest.group_name || "—"}</td>
-                          <td className={styles.centerCell}>
-                            {guest.link_generated ? "✅" : "—"}
-                          </td>
-                          <td className={styles.centerCell}>
-                            {guest.link_sent ? "✅" : "—"}
-                          </td>
-                          <td>
-                            <div className={styles.guestActions}>
-                              <button
-                                className={styles.editButton}
-                                onClick={() => openEditGuestModal(guest)}
-                                title="Editar"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                className={styles.deleteButton}
-                                onClick={() => handleDeleteGuestClick(guest)}
-                                title="Eliminar"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
+                <div className={styles.guestsTableWrapper}>
+                  <div className={styles.rankingTable}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Apellidos</th>
+                          <th>Apodo</th>
+                          <th>Teléfono</th>
+                          <th>Puede traer +1 sin confirmar</th>
+                          <th>Grupo de invitación</th>
+                          <th>Acciones</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {guests.map((guest) => (
+                          <tr key={guest.id}>
+                            <td className={styles.nameCell}>
+                              {guest.first_name}
+                            </td>
+                            <td>{guest.last_name || "—"}</td>
+                            <td>{guest.nickname || "—"}</td>
+                            <td>{guest.phone || "—"}</td>
+                            <td className={styles.centerCell}>
+                              {guest.has_plus_one_no_name ? "✅" : "—"}
+                            </td>
+                            <td>{guest.group_name || "—"}</td>
+                            <td>
+                              <div className={styles.guestActions}>
+                                <button
+                                  className={styles.editButton}
+                                  onClick={() => openEditGuestModal(guest)}
+                                  title="Editar"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  className={styles.deleteButton}
+                                  onClick={() => handleDeleteGuestClick(guest)}
+                                  title="Eliminar"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className={styles.guestsTotal}>
-                  Total de invitados (incluyendo plus ones sin nombre):{" "}
+                  Total de invitados (contando los +1 aún sin nombre):{" "}
                   <strong>{totalGuests}</strong>
                 </div>
               </>
@@ -653,7 +647,8 @@ function Manager() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.label}>
-                  Grupo de envío (para mandar el link en pareja o grupo)
+                  Grupo de invitación (personas que reciben el mismo link,
+                  ej. una pareja)
                 </label>
                 <input
                   type="text"
@@ -678,27 +673,7 @@ function Manager() {
                       )
                     }
                   />
-                  Tiene plus one sin nombre
-                </label>
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={guestForm.link_generated}
-                    onChange={(e) =>
-                      handleGuestFormChange("link_generated", e.target.checked)
-                    }
-                  />
-                  Link generado
-                </label>
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={guestForm.link_sent}
-                    onChange={(e) =>
-                      handleGuestFormChange("link_sent", e.target.checked)
-                    }
-                  />
-                  Link enviado
+                  Puede traer un acompañante sin nombre confirmado aún
                 </label>
               </div>
 

@@ -405,6 +405,14 @@
   }
 }
 
+.guestsTableWrapper {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+
 .centerCell {
   text-align: center;
 }
@@ -608,6 +616,10 @@
 
   .guestsToolbar {
     justify-content: stretch;
+  }
+
+  .guestsTableWrapper {
+    padding: 0 1rem;
   }
 
   .addGuestButton {
