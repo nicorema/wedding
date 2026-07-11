@@ -1,10 +1,23 @@
 import { useState, useEffect, Fragment } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
 import styles from "./Manager.module.scss";
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
+
+const SECTION_TO_TAB = {
+  mensajes: "messages",
+  ranking: "ranking",
+  invitados: "guests",
+};
+
+const TAB_TO_SECTION = {
+  messages: "mensajes",
+  ranking: "ranking",
+  guests: "invitados",
+};
 
 // API functions for admin
 const getPendingMessages = async () => {
@@ -112,6 +125,13 @@ const emptyGuestForm = {
 };
 
 function Manager() {
+  const navigate = useNavigate();
+  const { section } = useParams();
+  const activeTab = SECTION_TO_TAB[section] || "messages";
+  const setActiveTab = (tab) => {
+    navigate(`/manager/${TAB_TO_SECTION[tab]}`);
+  };
+
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Check if already authenticated in sessionStorage
     return sessionStorage.getItem("manager_authenticated") === "true";
@@ -119,7 +139,6 @@ function Manager() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab] = useState("messages"); // 'messages', 'ranking' or 'guests'
 
   // Guests modal state
   const [guestModalMode, setGuestModalMode] = useState(null); // null | 'add' | 'edit'
@@ -618,10 +637,12 @@ function Manager() {
                     <table className={styles.table}>
                       <thead>
                         <tr>
+                          <th>UUID</th>
                           <th>Nombre</th>
                           <th>Apellidos</th>
                           <th>Apodo</th>
                           <th>Teléfono</th>
+                          <th>Grupo</th>
                           <th>Generar mensaje</th>
                           <th>Acciones</th>
                         </tr>
@@ -645,12 +666,16 @@ function Manager() {
                                     : ""
                                 }
                               >
+                                <td className={styles.uuidCell}>
+                                  {guest.uuid}
+                                </td>
                                 <td className={styles.nameCell}>
                                   {guest.first_name}
                                 </td>
                                 <td>{guest.last_name || "—"}</td>
                                 <td>{guest.nickname || "—"}</td>
                                 <td>{guest.phone || "—"}</td>
+                                <td>{guest.group_name || "—"}</td>
                                 <td className={styles.centerCell}>
                                   <button
                                     className={styles.messageButton}
@@ -697,7 +722,7 @@ function Manager() {
                                   key={`${guest.id}-${companion.key}`}
                                   className={styles.companionRow}
                                 >
-                                  <td colSpan={6}>
+                                  <td colSpan={8}>
                                     <span className={styles.companionIndent}>
                                       ↳{" "}
                                       {companion.name || (

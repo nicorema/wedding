@@ -11,6 +11,7 @@ from db import get_all_guests, create_guest
 def serialize_guest(guest):
     return {
         "id": guest["id"],
+        "uuid": str(guest["uuid"]),
         "first_name": guest["first_name"],
         "last_name": guest["last_name"],
         "nickname": guest["nickname"],

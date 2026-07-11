@@ -108,6 +108,7 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS guests (
                 id SERIAL PRIMARY KEY,
+                uuid UUID NOT NULL DEFAULT gen_random_uuid(),
                 first_name TEXT NOT NULL,
                 last_name TEXT,
                 nickname TEXT,
@@ -125,6 +126,9 @@ def init_db():
         )
         cursor.execute(
             "ALTER TABLE guests ADD COLUMN IF NOT EXISTS group_name TEXT"
+        )
+        cursor.execute(
+            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS uuid UUID NOT NULL DEFAULT gen_random_uuid()"
         )
 
         # Indexes to improve performance
@@ -228,7 +232,7 @@ def get_all_guests():
         cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
             """
-            SELECT id, first_name, last_name, nickname, phone,
+            SELECT id, uuid, first_name, last_name, nickname, phone,
                    companion_names, group_name,
                    link_generated, link_sent, created_at
             FROM guests
@@ -261,7 +265,7 @@ def create_guest(
                 link_generated, link_sent
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, first_name, last_name, nickname, phone,
+            RETURNING id, uuid, first_name, last_name, nickname, phone,
                       companion_names, group_name,
                       link_generated, link_sent, created_at
         """,
@@ -307,7 +311,7 @@ def update_guest(
                 link_generated = %s,
                 link_sent = %s
             WHERE id = %s
-            RETURNING id, first_name, last_name, nickname, phone,
+            RETURNING id, uuid, first_name, last_name, nickname, phone,
                       companion_names, group_name,
                       link_generated, link_sent, created_at
         """,
