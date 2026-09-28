@@ -135,6 +135,26 @@ def init_db():
         cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS attending BOOLEAN")
         cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS allergies TEXT")
 
+        # Photos table (files live in the 'photos' storage bucket)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS photos (
+                id SERIAL PRIMARY KEY,
+                path TEXT NOT NULL,
+                thumb_path TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        )
+        cursor.execute(
+            """
+            INSERT INTO storage.buckets (id, name, public)
+            VALUES ('photos', 'photos', true)
+            ON CONFLICT (id) DO NOTHING
+        """
+        )
+
         # Indexes to improve performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_scores_time ON scores(time ASC)")
         cursor.execute(
@@ -486,3 +506,65 @@ def update_message_status(message_id, status):
 
         row = cursor.fetchone()
         return dict(row)
+
+
+def get_photos_by_status(status):
+    """Gets photos with the given status, newest first"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            """
+            SELECT id, path, thumb_path, status, created_at
+            FROM photos
+            WHERE status = %s
+            ORDER BY created_at DESC
+        """,
+            (status,),
+        )
+
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_photo(path, thumb_path, status):
+    """Registers an uploaded photo"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            """
+            INSERT INTO photos (path, thumb_path, status)
+            VALUES (%s, %s, %s)
+            RETURNING id, path, thumb_path, status, created_at
+        """,
+            (path, thumb_path, status),
+        )
+
+        row = cursor.fetchone()
+        return dict(row)
+
+
+def approve_photo(photo_id):
+    """Marks a photo as approved so it shows in the gallery"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE photos SET status = 'Approved' WHERE id = %s", (photo_id,)
+        )
+
+        if cursor.rowcount == 0:
+            raise ValueError(f"Photo with id {photo_id} not found")
+
+
+def delete_photo(photo_id):
+    """Deletes a photo row and returns its storage paths"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            "DELETE FROM photos WHERE id = %s RETURNING path, thumb_path",
+            (photo_id,),
+        )
+
+        row = cursor.fetchone()
+        if not row:
+            raise ValueError(f"Photo with id {photo_id} not found")
+        return [row["path"], row["thumb_path"]]
