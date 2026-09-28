@@ -525,6 +525,7 @@ ${invitationUrl}
     .reduce((total, guest) => total + headcount(guest), 0);
 
   const totalWithAllergies = guests.filter((guest) => guest.allergies).length;
+  const totalLinksSent = guests.filter((guest) => guest.link_sent).length;
 
   const filteredGuests = guests.filter((guest) => {
     if (attendingFilter === "yes") return guest.attending === true;
@@ -1056,6 +1057,12 @@ ${invitationUrl}
                   </span>
                   <span>
                     Con alergias: <strong>{totalWithAllergies}</strong>
+                  </span>
+                  <span>
+                    Invitaciones enviadas:{" "}
+                    <strong>
+                      {totalLinksSent} / {guests.length}
+                    </strong>
                   </span>
                 </div>
               </>
