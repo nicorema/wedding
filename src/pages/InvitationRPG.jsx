@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import AudioPlayer from "../components/AudioPlayer";
 import styles from "./InvitationRPG.module.scss";
 import invitationPhoto1 from "../assets/invitation-1.jpg";
@@ -52,6 +52,7 @@ const parseAllergiesByName = (text) => {
 
 function InvitationRPG() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const uuid = searchParams.get("uuid");
   const [guest, setGuest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,20 +77,10 @@ function InvitationRPG() {
     };
   }, []);
 
-  const fallbackGuest = {
-    first_name: "Invitado",
-    nickname: null,
-    companion_names: [],
-    group_name: null,
-    attending: null,
-    allergies: null,
-  };
-
+  // Only invited guests get in: no uuid or an unknown one goes to the home page.
   useEffect(() => {
     if (!uuid) {
-      setGuest(fallbackGuest);
-      setAttending(null);
-      setLoading(false);
+      navigate("/", { replace: true });
       return;
     }
 
@@ -139,9 +130,9 @@ function InvitationRPG() {
           }
         }
       })
-      .catch(() => setGuest(fallbackGuest))
-      .finally(() => setLoading(false));
-  }, [uuid]);
+      .then(() => setLoading(false))
+      .catch(() => navigate("/", { replace: true }));
+  }, [uuid, navigate]);
 
   if (loading) {
     return null;
