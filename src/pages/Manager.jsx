@@ -139,6 +139,7 @@ const emptyGuestForm = {
   nickname: "",
   phone: "",
   companion_names: [],
+  companions_attending: [],
   group_name: "",
   attending: null,
   allergies: "",
@@ -325,6 +326,9 @@ function Manager() {
         guest.companion_names && guest.companion_names.length
           ? guest.companion_names
           : [],
+      companions_attending: (guest.companion_names || []).map(
+        (_, i) => guest.companions_attending?.[i] ?? null
+      ),
       group_name: guest.group_name || "",
       attending: guest.attending ?? null,
       allergies: guest.allergies || "",
@@ -345,6 +349,28 @@ function Manager() {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const renderAttendanceCell = (answer) => (
+    <td
+      className={`${styles.centerCell} ${
+        answer === true
+          ? styles.attendingYes
+          : answer === false
+          ? styles.attendingNo
+          : styles.attendingPending
+      }`}
+    >
+      {answer === true ? "Sí" : answer === false ? "No" : "Por confirmar"}
+    </td>
+  );
+
+  const handleCompanionAttendingChange = (index, value) => {
+    setGuestForm((prev) => {
+      const companions_attending = [...prev.companions_attending];
+      companions_attending[index] = value;
+      return { ...prev, companions_attending };
+    });
+  };
+
   const handleCompanionNameChange = (index, value) => {
     setGuestForm((prev) => {
       const companion_names = [...prev.companion_names];
@@ -357,6 +383,7 @@ function Manager() {
     setGuestForm((prev) => ({
       ...prev,
       companion_names: [...prev.companion_names, ""],
+      companions_attending: [...prev.companions_attending, null],
     }));
   };
 
@@ -364,6 +391,9 @@ function Manager() {
     setGuestForm((prev) => ({
       ...prev,
       companion_names: prev.companion_names.filter((_, i) => i !== index),
+      companions_attending: prev.companions_attending.filter(
+        (_, i) => i !== index
+      ),
     }));
   };
 
@@ -494,6 +524,7 @@ ${invitationUrl}
         companion_names: guest.companion_names,
         group_name: guest.group_name,
         attending: guest.attending,
+        companions_attending: guest.companions_attending,
         allergies: guest.allergies,
         link_generated: guest.link_generated,
         link_sent: !guest.link_sent,
@@ -516,20 +547,35 @@ ${invitationUrl}
     0
   );
 
-  const totalConfirmed = guests
-    .filter((guest) => guest.attending === true)
-    .reduce((total, guest) => total + headcount(guest), 0);
+  // Each person in a party answers separately: [guest, ...companions].
+  const personAnswers = (guest) => [
+    guest.attending,
+    ...(guest.companion_names || []).map(
+      (_, i) => guest.companions_attending?.[i] ?? null
+    ),
+  ];
+  const isAnyoneGoing = (guest) => personAnswers(guest).includes(true);
+  const isNobodyGoing = (guest) =>
+    guest.attending !== null && !isAnyoneGoing(guest);
 
-  const totalDeclined = guests
-    .filter((guest) => guest.attending === false)
-    .reduce((total, guest) => total + headcount(guest), 0);
+  const totalConfirmed = guests.reduce(
+    (total, guest) =>
+      total + personAnswers(guest).filter((answer) => answer === true).length,
+    0
+  );
+
+  const totalDeclined = guests.reduce(
+    (total, guest) =>
+      total + personAnswers(guest).filter((answer) => answer === false).length,
+    0
+  );
 
   const totalWithAllergies = guests.filter((guest) => guest.allergies).length;
   const totalLinksSent = guests.filter((guest) => guest.link_sent).length;
 
   const filteredGuests = guests.filter((guest) => {
-    if (attendingFilter === "yes") return guest.attending === true;
-    if (attendingFilter === "no") return guest.attending === false;
+    if (attendingFilter === "yes") return isAnyoneGoing(guest);
+    if (attendingFilter === "no") return isNobodyGoing(guest);
     // Invitation sent but no answer yet
     if (attendingFilter === "pending")
       return guest.link_sent && guest.attending === null;
@@ -856,7 +902,7 @@ ${invitationUrl}
                   onClick={() => setAttendingFilter("yes")}
                 >
                   Confirmados (
-                  {guests.filter((g) => g.attending === true).length})
+                  {guests.filter(isAnyoneGoing).length})
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -864,7 +910,7 @@ ${invitationUrl}
                   }`}
                   onClick={() => setAttendingFilter("no")}
                 >
-                  No van ({guests.filter((g) => g.attending === false).length})
+                  No van ({guests.filter(isNobodyGoing).length})
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -934,6 +980,7 @@ ${invitationUrl}
                           ).map((name, index) => ({
                             key: index,
                             name: name || null,
+                            attending: guest.companions_attending?.[index] ?? null,
                             allergy: name
                               ? parsedAllergies.byName[name] ?? null
                               : null,
@@ -959,21 +1006,7 @@ ${invitationUrl}
                                 <td>{guest.nickname || "—"}</td>
                                 <td>{guest.phone || "—"}</td>
                                 <td>{guest.group_name || "—"}</td>
-                                <td
-                                  className={`${styles.centerCell} ${
-                                    guest.attending === true
-                                      ? styles.attendingYes
-                                      : guest.attending === false
-                                      ? styles.attendingNo
-                                      : styles.attendingPending
-                                  }`}
-                                >
-                                  {guest.attending === true
-                                    ? "Sí"
-                                    : guest.attending === false
-                                    ? "No"
-                                    : "Por confirmar"}
-                                </td>
+                                {renderAttendanceCell(guest.attending)}
                                 <td>{parsedAllergies.self || "—"}</td>
                                 <td className={styles.centerCell}>
                                   <a
@@ -1036,7 +1069,9 @@ ${invitationUrl}
                                         <span
                                           className={styles.pendingCompanion}
                                         >
-                                          Acompañante por confirmar
+                                          {companion.attending === false
+                                            ? "Sin acompañante"
+                                            : "Acompañante por confirmar"}
                                         </span>
                                       )}
                                     </span>
@@ -1045,7 +1080,7 @@ ${invitationUrl}
                                   <td>—</td>
                                   <td>—</td>
                                   <td>—</td>
-                                  <td className={styles.centerCell}>—</td>
+                                  {renderAttendanceCell(companion.attending)}
                                   <td>{companion.allergy || "—"}</td>
                                   <td>—</td>
                                   <td>—</td>
@@ -1174,6 +1209,29 @@ ${invitationUrl}
                         handleCompanionNameChange(index, e.target.value)
                       }
                     />
+                    <select
+                      className={styles.input}
+                      value={
+                        guestForm.companions_attending[index] == null
+                          ? "unconfirmed"
+                          : guestForm.companions_attending[index]
+                          ? "yes"
+                          : "no"
+                      }
+                      onChange={(e) =>
+                        handleCompanionAttendingChange(
+                          index,
+                          e.target.value === "unconfirmed"
+                            ? null
+                            : e.target.value === "yes"
+                        )
+                      }
+                      title="¿Va?"
+                    >
+                      <option value="unconfirmed">Por confirmar</option>
+                      <option value="yes">Va</option>
+                      <option value="no">No va</option>
+                    </select>
                     <button
                       type="button"
                       className={styles.removeCompanionButton}
@@ -1194,7 +1252,7 @@ ${invitationUrl}
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.label}>Confirmado</label>
+                <label className={styles.label}>Confirmado (titular)</label>
                 <select
                   className={styles.input}
                   value={

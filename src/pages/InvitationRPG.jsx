@@ -59,6 +59,7 @@ function InvitationRPG() {
 
   const [attending, setAttending] = useState(null);
   const [companionNames, setCompanionNames] = useState([]);
+  const [companionsAttending, setCompanionsAttending] = useState([]);
   const [pendingIndexes, setPendingIndexes] = useState([]);
   const [personAllergies, setPersonAllergies] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -96,6 +97,9 @@ function InvitationRPG() {
         setAttending(data.attending);
         const names = data.companion_names || [];
         setCompanionNames(names);
+        setCompanionsAttending(
+          data.companions_attending || names.map(() => null)
+        );
         setPendingIndexes(
           names.map((name, i) => (name ? null : i)).filter((i) => i !== null)
         );
@@ -141,12 +145,51 @@ function InvitationRPG() {
   const isPlural =
     Boolean(guest.group_name) || (guest.companion_names || []).some(Boolean);
 
+  const selfName = guest.nickname || guest.first_name;
+  // Parties answer person by person: someone in a group (or the +1) may not come.
+  const hasCompanions = companionNames.length > 0;
+  const isAnyoneGoing =
+    attending === true || companionsAttending.some((value) => value === true);
+  const isEveryoneAnswered =
+    attending !== null && companionsAttending.every((value) => value !== null);
+
+  // Only people who are coming get the food question.
   const people = [
-    { key: "self", name: guest.nickname || guest.first_name },
+    ...(attending === true ? [{ key: "self", name: selfName }] : []),
     ...companionNames
-      .map((name, i) => ({ key: `companion-${i}`, name }))
-      .filter((p) => p.name),
+      .map((name, i) => ({
+        key: `companion-${i}`,
+        name: name.trim() || "Tu acompañante",
+        isGoing: companionsAttending[i] === true,
+      }))
+      .filter((person) => person.isGoing),
   ];
+  const areGoingCompanionsNamed = companionNames.every(
+    (name, i) => companionsAttending[i] !== true || name.trim()
+  );
+
+  const resetSaved = () => {
+    setJustSaved(false);
+    setIsStamping(false);
+  };
+
+  const setSelfAttending = (value) => {
+    resetSaved();
+    setAttending(value);
+    // A +1 only comes along with the guest who invited them.
+    if (value === false) {
+      setCompanionsAttending((prev) =>
+        prev.map((answer, i) => (pendingIndexes.includes(i) ? false : answer))
+      );
+    }
+  };
+
+  const setCompanionAttending = (index, value) => {
+    resetSaved();
+    setCompanionsAttending((prev) =>
+      prev.map((answer, i) => (i === index ? value : answer))
+    );
+  };
 
   const setPersonChoice = (key, choice) => {
     setJustSaved(false);
@@ -175,16 +218,24 @@ function InvitationRPG() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (attending === null) return;
-    if (attending && !allAllergiesAnswered) return;
+    if (!canSubmit) return;
 
     setSubmitting(true);
     setSubmitError("");
     setIsStamping(true);
 
+    // An unnamed +1 who isn't coming frees their seat again.
+    const namesToSave = companionNames.map((name, i) =>
+      pendingIndexes.includes(i) && companionsAttending[i] !== true
+        ? ""
+        : name.trim()
+    );
+
     let allergiesToSave = null;
-    if (attending) {
-      if (people.length === 1) {
+    if (isAnyoneGoing) {
+      // Solo parties store a plain label; anyone with named companions uses
+      // "Name: label" so each answer maps back to its person.
+      if (!namesToSave.some(Boolean)) {
         allergiesToSave = allergyLabel(personAllergies.self);
       } else {
         const parts = people
@@ -205,8 +256,9 @@ function InvitationRPG() {
           body: JSON.stringify({
             uuid,
             attending,
+            companions_attending: companionsAttending,
             allergies: allergiesToSave,
-            companion_names: attending ? companionNames : undefined,
+            companion_names: namesToSave,
           }),
         }),
         new Promise((resolve) => setTimeout(resolve, 750)),
@@ -228,7 +280,10 @@ function InvitationRPG() {
   };
 
   const canSubmit =
-    attending !== null && (!attending || allAllergiesAnswered) && !submitting;
+    isEveryoneAnswered &&
+    areGoingCompanionsNamed &&
+    allAllergiesAnswered &&
+    !submitting;
 
   return (
     <div className={styles.page}>
@@ -353,44 +408,118 @@ function InvitationRPG() {
           </p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.block}>
-              <p className={styles.blockLabel}>¿Aceptas esta misión?</p>
-              <div className={styles.choiceRow}>
-                <button
-                  type="button"
-                  className={`${styles.questButton} ${styles.acceptButton} ${
-                    attending === true ? styles.choiceSelected : ""
-                  }`}
-                  onClick={() => {
-                    setJustSaved(false);
-                    setIsStamping(false);
-                    setAttending(true);
-                  }}
-                >
-                  Aceptar la misión ⚔️
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.questButton} ${styles.declineButton} ${
-                    attending === false ? styles.choiceSelected : ""
-                  }`}
-                  onClick={() => {
-                    setJustSaved(false);
-                    setIsStamping(false);
-                    setAttending(false);
-                  }}
-                >
-                  No podré unirme a la aventura
-                </button>
+            {!hasCompanions ? (
+              <div className={styles.block}>
+                <p className={styles.blockLabel}>¿Aceptas esta misión?</p>
+                <div className={styles.choiceRow}>
+                  <button
+                    type="button"
+                    className={`${styles.questButton} ${styles.acceptButton} ${
+                      attending === true ? styles.choiceSelected : ""
+                    }`}
+                    onClick={() => setSelfAttending(true)}
+                  >
+                    Aceptar la misión ⚔️
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.questButton} ${styles.declineButton} ${
+                      attending === false ? styles.choiceSelected : ""
+                    }`}
+                    onClick={() => setSelfAttending(false)}
+                  >
+                    No podré unirme a la aventura
+                  </button>
+                </div>
+                <p className={styles.softNote}>
+                  Cualquiera de las dos respuestas nos sirve para planear la
+                  aventura — lo importante es que el mensajero regrese con
+                  noticias tuyas.
+                </p>
               </div>
-              <p className={styles.softNote}>
-                Cualquiera de las dos respuestas nos sirve para planear la
-                aventura — lo importante es que el mensajero regrese con
-                noticias tuyas.
-              </p>
-            </div>
+            ) : (
+              <div className={styles.block}>
+                <p className={styles.blockLabel}>
+                  ¿Quiénes aceptan esta misión?
+                </p>
+                <div className={styles.personRow}>
+                  <span className={styles.personName}>{selfName}</span>
+                  <div className={styles.choiceRow}>
+                    <button
+                      type="button"
+                      className={`${styles.traitButton} ${
+                        attending === true ? styles.choiceSelected : ""
+                      }`}
+                      onClick={() => setSelfAttending(true)}
+                    >
+                      Va ⚔️
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.traitButton} ${
+                        attending === false ? styles.choiceSelected : ""
+                      }`}
+                      onClick={() => setSelfAttending(false)}
+                    >
+                      No va
+                    </button>
+                  </div>
+                </div>
 
-            {attending === false && (
+                {companionNames.map((name, index) => {
+                  const isPlusOne = pendingIndexes.includes(index);
+                  // A +1 is only asked about once the guest is coming.
+                  if (isPlusOne && attending !== true) return null;
+                  return (
+                    <div className={styles.personRow} key={index}>
+                      <span className={styles.personName}>
+                        {isPlusOne ? "Tu acompañante (+1)" : name}
+                      </span>
+                      <div className={styles.choiceRow}>
+                        <button
+                          type="button"
+                          className={`${styles.traitButton} ${
+                            companionsAttending[index] === true
+                              ? styles.choiceSelected
+                              : ""
+                          }`}
+                          onClick={() => setCompanionAttending(index, true)}
+                        >
+                          {isPlusOne ? "Llevaré acompañante" : "Va ⚔️"}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.traitButton} ${
+                            companionsAttending[index] === false
+                              ? styles.choiceSelected
+                              : ""
+                          }`}
+                          onClick={() => setCompanionAttending(index, false)}
+                        >
+                          {isPlusOne ? "Iré sin acompañante" : "No va"}
+                        </button>
+                      </div>
+                      {isPlusOne && companionsAttending[index] === true && (
+                        <input
+                          type="text"
+                          className={styles.textInput}
+                          placeholder="Nombre de tu acompañante"
+                          value={name}
+                          onChange={(e) => {
+                            resetSaved();
+                            const updated = [...companionNames];
+                            updated[index] = e.target.value;
+                            setCompanionNames(updated);
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {isEveryoneAnswered && !isAnyoneGoing && (
               <p className={styles.declineText}>
                 Entendemos que el camino no te permita acompañarnos esta vez.
                 ¡Se te extrañará en la taberna del festejo! Gracias por
@@ -398,39 +527,12 @@ function InvitationRPG() {
               </p>
             )}
 
-            {attending === true && pendingIndexes.length > 0 && (
-              <div className={styles.block}>
-                <p className={styles.blockLabel}>
-                  {pendingIndexes.length > 1
-                    ? "Puedes nombrar a tus compañeros de aventura:"
-                    : "Puedes nombrar a tu compañero de aventura:"}
-                </p>
-                {pendingIndexes.map((index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    className={styles.textInput}
-                    placeholder="Nombre del compañero"
-                    value={companionNames[index] || ""}
-                    onChange={(e) => {
-                      setJustSaved(false);
-                      setIsStamping(false);
-                      const updated = [...companionNames];
-                      updated[index] = e.target.value;
-                      setCompanionNames(updated);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-
-            {attending === true &&
-              people.map((person) => {
+            {people.map((person) => {
                 const entry = personAllergies[person.key] || {};
                 return (
                   <div className={styles.block} key={person.key}>
                     <p className={styles.blockLabel}>
-                      {people.length > 1
+                      {hasCompanions
                         ? `¿${person.name} carga alguna condición alimenticia?`
                         : "¿Cargas alguna condición alimenticia?"}
                     </p>
@@ -541,7 +643,7 @@ function InvitationRPG() {
                   +100 XP · Registro actualizado
                 </p>
                 <p className={styles.questCompleteBody}>
-                  {attending
+                  {isAnyoneGoing
                     ? isPlural
                       ? "Su respuesta ha quedado grabada en el gran libro de aventureros. Preparen su equipo: los esperamos el 16 de enero de 2027 en Retiro San Juan."
                       : "Tu respuesta ha quedado grabada en el gran libro de aventureros. Prepara tu equipo: te esperamos el 16 de enero de 2027 en Retiro San Juan."

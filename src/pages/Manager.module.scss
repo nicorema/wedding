@@ -528,6 +528,10 @@
   .input {
     flex: 1;
   }
+
+  select.input {
+    flex: 0 0 9rem;
+  }
 }
 
 .removeCompanionButton {
