@@ -154,6 +154,8 @@ def init_db():
             ON CONFLICT (id) DO NOTHING
         """
         )
+        # Gallery order, set from the Manager; new approvals go to the end
+        cursor.execute("ALTER TABLE photos ADD COLUMN IF NOT EXISTS position INTEGER")
 
         # Indexes to improve performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_scores_time ON scores(time ASC)")
@@ -509,7 +511,7 @@ def update_message_status(message_id, status):
 
 
 def get_photos_by_status(status):
-    """Gets photos with the given status, newest first"""
+    """Gets photos with the given status, in gallery order"""
     with get_db() as conn:
         cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
@@ -517,7 +519,7 @@ def get_photos_by_status(status):
             SELECT id, path, thumb_path, status, created_at
             FROM photos
             WHERE status = %s
-            ORDER BY created_at DESC
+            ORDER BY position ASC NULLS LAST, created_at DESC
         """,
             (status,),
         )
@@ -548,7 +550,13 @@ def approve_photo(photo_id):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE photos SET status = 'Approved' WHERE id = %s", (photo_id,)
+            """
+            UPDATE photos
+            SET status = 'Approved',
+                position = (SELECT COALESCE(MAX(position), 0) + 1 FROM photos)
+            WHERE id = %s
+        """,
+            (photo_id,),
         )
 
         if cursor.rowcount == 0:
@@ -568,3 +576,18 @@ def delete_photo(photo_id):
         if not row:
             raise ValueError(f"Photo with id {photo_id} not found")
         return [row["path"], row["thumb_path"]]
+
+
+def reorder_photos(photo_ids):
+    """Sets gallery order: position follows the order of photo_ids"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE photos
+            SET position = ordered.idx
+            FROM unnest(%s::int[]) WITH ORDINALITY AS ordered(id, idx)
+            WHERE photos.id = ordered.id
+        """,
+            (photo_ids,),
+        )

@@ -7,7 +7,13 @@ import urllib.parse
 
 # Add parent directory to path to import db module
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from db import get_photos_by_status, create_photo, approve_photo, delete_photo
+from db import (
+    get_photos_by_status,
+    create_photo,
+    approve_photo,
+    delete_photo,
+    reorder_photos,
+)
 from storage import (
     create_signed_upload_url,
     delete_objects,
@@ -22,6 +28,7 @@ from storage import (
 #   POST   /api/photos?action=upload-url   signed URLs to upload a photo + thumb
 #   POST   /api/photos                     register an uploaded photo
 #   PUT    /api/photos?id={id}             approve
+#   PUT    /api/photos?action=reorder      set gallery order from {ids: [...]}
 #   DELETE /api/photos?id={id}             reject (deletes row and files)
 
 
@@ -90,6 +97,22 @@ class handler(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         try:
+            if self._query_param("action") == "reorder":
+                content_length = int(self.headers.get("Content-Length", 0))
+                data = json.loads(
+                    self.rfile.read(content_length).decode("utf-8") or "{}"
+                )
+                ids = data.get("ids")
+                if not (
+                    isinstance(ids, list) and all(isinstance(i, int) for i in ids)
+                ):
+                    self._send_json(400, {"error": "ids must be a list of integers"})
+                    return
+
+                reorder_photos(ids)
+                self._send_json(200, {"message": "Gallery order saved"})
+                return
+
             photo_id = self._photo_id()
             if photo_id is None:
                 self._send_json(400, {"error": "Photo ID is required"})
