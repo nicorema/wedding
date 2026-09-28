@@ -15,7 +15,7 @@ def get_supabase_url():
 
 
 def _storage_request(method, path, body=None):
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     if not key:
         raise ValueError("Missing SUPABASE_SERVICE_ROLE_KEY environment variable")
 
@@ -24,8 +24,8 @@ def _storage_request(method, path, body=None):
         method=method,
         data=json.dumps(body).encode() if body is not None else None,
         headers={
-            # sb_secret_ keys are not JWTs, so they only go in apikey
             "apikey": key,
+            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
         },
     )
