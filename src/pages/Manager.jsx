@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
 import ManagerPhotos from "./ManagerPhotos";
+import ManagerGallery from "./ManagerGallery";
 import styles from "./Manager.module.scss";
 
 const ADMIN_USERNAME = "admin";
@@ -62,6 +63,14 @@ const getPendingPhotos = async () => {
   const response = await fetch("/api/photos?status=Pending");
   if (!response.ok) {
     throw new Error("Failed to fetch pending photos");
+  }
+  return response.json();
+};
+
+const getApprovedPhotos = async () => {
+  const response = await fetch("/api/photos");
+  if (!response.ok) {
+    throw new Error("Failed to fetch approved photos");
   }
   return response.json();
 };
@@ -160,6 +169,7 @@ function Manager() {
   const [deletingGuest, setDeletingGuest] = useState(null);
   const [highlightedGuestId, setHighlightedGuestId] = useState(null);
   const [attendingFilter, setAttendingFilter] = useState("all"); // 'all' | 'yes' | 'no' | 'pending'
+  const [photosView, setPhotosView] = useState("review"); // 'review' | 'gallery'
 
   // Query for pending messages
   const {
@@ -211,6 +221,19 @@ function Manager() {
     queryKey: ["admin", "pending-photos"],
     queryFn: getPendingPhotos,
     enabled: isAuthenticated, // Fetch as soon as Manager mounts, not just on this tab
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Query for approved photos (gallery order)
+  const {
+    data: approvedPhotos = [],
+    isLoading: isLoadingApprovedPhotos,
+    refetch: refetchApprovedPhotos,
+  } = useQuery({
+    queryKey: ["admin", "approved-photos"],
+    queryFn: getApprovedPhotos,
+    enabled: isAuthenticated,
     staleTime: 1 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -398,26 +421,48 @@ function Manager() {
     return { self: byName[selfName] ?? null, byName };
   };
 
+  // Three copies: +1 (companion still unnamed), group/plural, and solo.
   const buildGuestMessage = (guest) => {
     const name = getGreetingName(guest);
-    let message = `Hola ${name}`;
+    const invitationUrl = `${window.location.origin}/invitacion?uuid=${guest.uuid}`;
     const hasUnconfirmedCompanion = (guest.companion_names || []).some(
       (companionName) => !companionName
     );
+    const isPlural =
+      Boolean(guest.group_name) || (guest.companion_names || []).some(Boolean);
+
     if (hasUnconfirmedCompanion) {
-      message += " puedes llevar un +1";
+      return `¡Hola, ${name}! 💌
+Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ti: *entregarte oficialmente tu invitación de boda*. ✨
+Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
+🎟️ En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura. También podrás confirmar tu asistencia y registrar los datos de la persona que quieras llevar como tu acompañante. *¡La elección de tu +1 queda en tus manos!* ✨
+${invitationUrl}
+📋 Te pedimos completar la información tuya y la de tu acompañante, y confirmar tu asistencia *a más tardar el 1 de diciembre de 2026*.`;
     }
-    const invitationUrl = `${window.location.origin}/invitacion?uuid=${guest.uuid}`;
-    message += ` ${invitationUrl}`;
-    return message;
+
+    if (isPlural) {
+      return `¡Hola, ${name}! 💌
+Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ustedes: *entregarles oficialmente su invitación de boda*. ✨
+Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
+🎟️ En el siguiente link encontrarán su invitación y todos los detalles de esta aventura. También podrán confirmar su asistencia y contarnos la información que necesitamos para ese día:
+${invitationUrl}
+📋 Les pedimos completar la información y confirmar su asistencia *a más tardar el 1 de diciembre de 2026*.`;
+    }
+
+    return `¡Hola, ${name}! 💌
+Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ti: *entregarte oficialmente tu invitación de boda*. ✨
+Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
+🎟️ En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura. También podrás confirmar tu asistencia y contarnos la información que necesitamos para ese día:
+${invitationUrl}
+📋 Te pedimos completar la información y confirmar tu asistencia *a más tardar el 1 de diciembre de 2026*.`;
   };
 
   const buildWhatsappLink = (guest) => {
     const message = buildGuestMessage(guest);
     const digits = guest.phone ? guest.phone.replace(/\D/g, "") : "";
-    return digits
-      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
-      : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    // wa.me's redirect mangles emojis into "?"; api.whatsapp.com keeps them.
+    const phoneParam = digits ? `phone=${digits}&` : "";
+    return `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(message)}`;
   };
 
   const handleToggleLinkSent = (guest) => {
@@ -685,11 +730,42 @@ function Manager() {
         {/* Photos Tab */}
         {activeTab === "photos" && (
           <div className={styles.tabContent}>
-            <ManagerPhotos
-              pendingPhotos={pendingPhotos}
-              isLoading={isLoadingPhotos}
-              onReviewError={refetchPhotos}
-            />
+            <div className={styles.attendingFilters}>
+              <button
+                className={`${styles.filterButton} ${
+                  photosView === "review" ? styles.filterActive : ""
+                }`}
+                onClick={() => setPhotosView("review")}
+              >
+                Revisar ({pendingPhotos.length})
+              </button>
+              <button
+                className={`${styles.filterButton} ${
+                  photosView === "gallery" ? styles.filterActive : ""
+                }`}
+                onClick={() => {
+                  // Pick up photos approved in the review view.
+                  refetchApprovedPhotos();
+                  setPhotosView("gallery");
+                }}
+              >
+                Ordenar galería ({approvedPhotos.length})
+              </button>
+            </div>
+
+            {photosView === "review" ? (
+              <ManagerPhotos
+                pendingPhotos={pendingPhotos}
+                isLoading={isLoadingPhotos}
+                onReviewError={refetchPhotos}
+              />
+            ) : (
+              <ManagerGallery
+                approvedPhotos={approvedPhotos}
+                isLoading={isLoadingApprovedPhotos}
+                onChange={refetchApprovedPhotos}
+              />
+            )}
           </div>
         )}
 

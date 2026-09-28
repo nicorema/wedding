@@ -1,0 +1,98 @@
+.gallery {
+  width: 100%;
+}
+
+.emptyState {
+  width: 100%;
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: var(--forest-green);
+  background: rgba(127, 143, 122, 0.05);
+  border-radius: 12px;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  background: var(--ivory);
+}
+
+.count {
+  color: var(--forest-green);
+  opacity: 0.8;
+}
+
+.saveButton {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--forest-green);
+  color: var(--ivory);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.4rem;
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(127, 143, 122, 0.15);
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+}
+
+.isDragging {
+  z-index: 3;
+  opacity: 0.8;
+  cursor: grabbing;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.deleteButton {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
