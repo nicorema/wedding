@@ -38,7 +38,7 @@ def _storage_request(method, path, body=None):
 
 def create_signed_upload_url(object_path):
     """Returns a URL the browser can PUT the file to directly (valid 2 hours)"""
-    data = _storage_request("POST", f"/object/upload/sign/{BUCKET}/{object_path}")
+    data = _storage_request("POST", f"/object/upload/sign/{BUCKET}/{object_path}", {})
     return f"{get_supabase_url()}/storage/v1{data['url']}"
 
 
