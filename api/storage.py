@@ -1,5 +1,6 @@
 import os
 import json
+import urllib.error
 import urllib.request
 
 BUCKET = "photos"
@@ -28,8 +29,11 @@ def _storage_request(method, path, body=None):
             "Content-Type": "application/json",
         },
     )
-    with urllib.request.urlopen(request) as response:
-        return json.loads(response.read().decode() or "null")
+    try:
+        with urllib.request.urlopen(request) as response:
+            return json.loads(response.read().decode() or "null")
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"Storage {e.code}: {e.read().decode()}") from e
 
 
 def create_signed_upload_url(object_path):
