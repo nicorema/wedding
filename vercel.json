@@ -2,6 +2,11 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{dist,src,public,node_modules,backend,save the date,.vercel_python_packages}/**"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
