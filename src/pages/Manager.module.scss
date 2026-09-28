@@ -637,6 +637,12 @@
   }
 }
 
+// Shown only for context: the party's contact row when the primary guest
+// doesn't match the active filter.
+.dimmedRow {
+  opacity: 0.4;
+}
+
 .highlightedRow {
   animation: guestHighlight 2.5s ease;
 }

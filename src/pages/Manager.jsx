@@ -555,8 +555,7 @@ ${invitationUrl}
     ),
   ];
   const isAnyoneGoing = (guest) => personAnswers(guest).includes(true);
-  const isNobodyGoing = (guest) =>
-    guest.attending !== null && !isAnyoneGoing(guest);
+  const isSomeoneDeclining = (guest) => personAnswers(guest).includes(false);
 
   const totalConfirmed = guests.reduce(
     (total, guest) =>
@@ -573,9 +572,13 @@ ${invitationUrl}
   const totalWithAllergies = guests.filter((guest) => guest.allergies).length;
   const totalLinksSent = guests.filter((guest) => guest.link_sent).length;
 
+  // The answer a person must have to count under the active filter.
+  const filteredAnswer =
+    attendingFilter === "yes" ? true : attendingFilter === "no" ? false : undefined;
+
   const filteredGuests = guests.filter((guest) => {
     if (attendingFilter === "yes") return isAnyoneGoing(guest);
-    if (attendingFilter === "no") return isNobodyGoing(guest);
+    if (attendingFilter === "no") return isSomeoneDeclining(guest);
     // Invitation sent but no answer yet
     if (attendingFilter === "pending")
       return guest.link_sent && guest.attending === null;
@@ -902,7 +905,7 @@ ${invitationUrl}
                   onClick={() => setAttendingFilter("yes")}
                 >
                   Confirmados (
-                  {guests.filter(isAnyoneGoing).length})
+                  {totalConfirmed})
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -910,7 +913,7 @@ ${invitationUrl}
                   }`}
                   onClick={() => setAttendingFilter("no")}
                 >
-                  No van ({guests.filter(isNobodyGoing).length})
+                  No van ({totalDeclined})
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -984,17 +987,26 @@ ${invitationUrl}
                             allergy: name
                               ? parsedAllergies.byName[name] ?? null
                               : null,
-                          }));
+                          }))
+                            // "Confirmados" / "No van" list people, not parties.
+                            .filter(
+                              (companion) =>
+                                filteredAnswer === undefined ||
+                                companion.attending === filteredAnswer
+                            );
+                          const isGuestDimmed =
+                            filteredAnswer !== undefined &&
+                            guest.attending !== filteredAnswer;
 
                           return (
                             <Fragment key={guest.id}>
                               <tr
                                 id={`guest-row-${guest.id}`}
-                                className={
+                                className={`${
                                   guest.id === highlightedGuestId
                                     ? styles.highlightedRow
                                     : ""
-                                }
+                                } ${isGuestDimmed ? styles.dimmedRow : ""}`}
                               >
                                 <td className={styles.uuidCell}>
                                   {guest.uuid}
