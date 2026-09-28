@@ -168,7 +168,7 @@ function Manager() {
   const [editingGuestId, setEditingGuestId] = useState(null);
   const [deletingGuest, setDeletingGuest] = useState(null);
   const [highlightedGuestId, setHighlightedGuestId] = useState(null);
-  const [attendingFilter, setAttendingFilter] = useState("all"); // 'all' | 'yes' | 'no' | 'pending'
+  const [attendingFilter, setAttendingFilter] = useState("all"); // 'all' | 'yes' | 'no' | 'pending' | 'notSent'
   const [photosView, setPhotosView] = useState("review"); // 'review' | 'gallery'
 
   // Query for pending messages
@@ -530,7 +530,10 @@ ${invitationUrl}
   const filteredGuests = guests.filter((guest) => {
     if (attendingFilter === "yes") return guest.attending === true;
     if (attendingFilter === "no") return guest.attending === false;
-    if (attendingFilter === "pending") return guest.attending === null;
+    // Invitation sent but no answer yet
+    if (attendingFilter === "pending")
+      return guest.link_sent && guest.attending === null;
+    if (attendingFilter === "notSent") return !guest.link_sent;
     return true;
   });
 
@@ -870,7 +873,19 @@ ${invitationUrl}
                   onClick={() => setAttendingFilter("pending")}
                 >
                   Por confirmar (
-                  {guests.filter((g) => g.attending === null).length})
+                  {
+                    guests.filter((g) => g.link_sent && g.attending === null)
+                      .length
+                  }
+                  )
+                </button>
+                <button
+                  className={`${styles.filterButton} ${
+                    attendingFilter === "notSent" ? styles.filterActive : ""
+                  }`}
+                  onClick={() => setAttendingFilter("notSent")}
+                >
+                  Sin enviar ({guests.filter((g) => !g.link_sent).length})
                 </button>
               </div>
               <button
