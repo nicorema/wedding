@@ -2,8 +2,9 @@
   padding: 0.5rem 0;
   min-height: calc(100vh - 200px);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 2rem;
 }
 
 .content {
@@ -51,25 +52,61 @@
   }
 }
 
-.comingSoon {
-  background: linear-gradient(
-    135deg,
-    rgba(127, 143, 122, 0.1) 0%,
-    rgba(95, 111, 90, 0.1) 100%
-  );
-  border: 2px solid var(--eucalyptus-green);
-  border-radius: 12px;
-  padding: 2rem;
-  margin-top: 2rem;
-  animation: fadeInUp 0.8s ease-out 0.6s both;
+
+
+.reviewNote {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--forest-green);
+  opacity: 0.8;
 }
 
-.comingSoonText {
-  font-size: 1.1rem;
-  color: var(--forest-green);
-  font-style: italic;
-  margin: 0;
-  opacity: 0.85;
+.grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.gridItem {
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(127, 143, 122, 0.15);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(20, 26, 20, 0.9);
+  cursor: zoom-out;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+  }
 }
 
 @keyframes fadeInUp {
@@ -106,11 +143,8 @@
     font-size: 1.1rem;
   }
 
-  .comingSoon {
-    padding: 1.5rem;
-  }
-
-  .comingSoonText {
-    font-size: 1rem;
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
   }
 }
