@@ -28,7 +28,7 @@ const putFile = async (url, blob) => {
   }
 };
 
-const uploadPhoto = async (file, isApproved) => {
+const uploadPhoto = async (file) => {
   const [full, thumb] = await Promise.all([
     compressImage(file, FULL_MAX_SIDE, 0.82),
     compressImage(file, THUMB_MAX_SIDE, 0.75),
@@ -48,14 +48,14 @@ const uploadPhoto = async (file, isApproved) => {
   const registerResponse = await fetch("/api/photos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, thumb_path, isApproved }),
+    body: JSON.stringify({ path, thumb_path }),
   });
   if (!registerResponse.ok) {
     throw new Error("Failed to register photo");
   }
 };
 
-function PhotoUploader({ isApproved = false }) {
+function PhotoUploader() {
   const [total, setTotal] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
@@ -76,11 +76,11 @@ function PhotoUploader({ isApproved = false }) {
       while (queue.length > 0) {
         const file = queue.shift();
         try {
-          await uploadPhoto(file, isApproved);
+          await uploadPhoto(file);
         } catch {
           // One retry covers flaky mobile connections.
           try {
-            await uploadPhoto(file, isApproved);
+            await uploadPhoto(file);
           } catch {
             setFailedCount((count) => count + 1);
             continue;

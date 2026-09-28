@@ -83,9 +83,7 @@ class handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Invalid photo paths"})
                 return
 
-            # Photos uploaded from the Manager skip review
-            status = "Approved" if data.get("isApproved") is True else "Pending"
-            photo = create_photo(path, thumb_path, status)
+            photo = create_photo(path, thumb_path, "Pending")
             self._send_json(201, serialize_photo(photo))
         except Exception as e:
             self._send_json(500, {"error": str(e), "type": type(e).__name__})

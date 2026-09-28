@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import PhotoUploader from "../components/PhotoUploader";
 import styles from "./ManagerPhotos.module.scss";
 
 const SWIPE_THRESHOLD = 120;
@@ -86,8 +85,6 @@ function ManagerPhotos({ pendingPhotos, isLoading, onReviewError }) {
 
   return (
     <div className={styles.managerPhotos}>
-      <PhotoUploader isApproved />
-
       {isLoading ? (
         <div className={styles.emptyState}>Loading pending photos...</div>
       ) : !current ? (
