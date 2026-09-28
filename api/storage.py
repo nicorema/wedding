@@ -33,9 +33,7 @@ def _storage_request(method, path, body=None):
         with urllib.request.urlopen(request) as response:
             return json.loads(response.read().decode() or "null")
     except urllib.error.HTTPError as e:
-        # TEMP diagnostic: key shape only, never the key itself
-        key_shape = f"key={key[:4]}… len={len(key)} dots={key.count('.')}"
-        raise RuntimeError(f"Storage {e.code}: {e.read().decode()} [{key_shape}]") from e
+        raise RuntimeError(f"Storage {e.code}: {e.read().decode()}") from e
 
 
 def create_signed_upload_url(object_path):
