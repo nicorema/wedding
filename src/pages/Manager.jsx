@@ -2,6 +2,7 @@ import { useState, useEffect, Fragment } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
+import ManagerPhotos from "./ManagerPhotos";
 import styles from "./Manager.module.scss";
 
 const ADMIN_USERNAME = "admin";
@@ -11,12 +12,14 @@ const SECTION_TO_TAB = {
   mensajes: "messages",
   ranking: "ranking",
   invitados: "guests",
+  fotos: "photos",
 };
 
 const TAB_TO_SECTION = {
   messages: "mensajes",
   ranking: "ranking",
   guests: "invitados",
+  photos: "fotos",
 };
 
 // API functions for admin
@@ -55,6 +58,14 @@ const deleteMessage = async (messageId) => {
 };
 
 // API function for getting all scores
+const getPendingPhotos = async () => {
+  const response = await fetch("/api/photos?status=Pending");
+  if (!response.ok) {
+    throw new Error("Failed to fetch pending photos");
+  }
+  return response.json();
+};
+
 const getAllScores = async () => {
   const response = await fetch("/api/admin/scores");
   if (!response.ok) {
@@ -148,7 +159,6 @@ function Manager() {
   const [editingGuestId, setEditingGuestId] = useState(null);
   const [deletingGuest, setDeletingGuest] = useState(null);
   const [highlightedGuestId, setHighlightedGuestId] = useState(null);
-  const [copiedGuestId, setCopiedGuestId] = useState(null);
   const [attendingFilter, setAttendingFilter] = useState("all"); // 'all' | 'yes' | 'no' | 'pending'
 
   // Query for pending messages
@@ -192,6 +202,19 @@ function Manager() {
     refetchOnWindowFocus: false,
   });
 
+  // Query for photos waiting for review
+  const {
+    data: pendingPhotos = [],
+    isLoading: isLoadingPhotos,
+    refetch: refetchPhotos,
+  } = useQuery({
+    queryKey: ["admin", "pending-photos"],
+    queryFn: getPendingPhotos,
+    enabled: isAuthenticated, // Fetch as soon as Manager mounts, not just on this tab
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   const queryClient = useQueryClient();
 
   // Mutation for updating message status
@@ -230,6 +253,28 @@ function Manager() {
       refetchGuests();
       closeGuestModal();
       setHighlightedGuestId(updatedGuest.id);
+    },
+  });
+
+  const toggleLinkSentMutation = useMutation({
+    mutationFn: updateGuest,
+    onMutate: async ({ guestId, guestData }) => {
+      await queryClient.cancelQueries({ queryKey: ["admin", "guests"] });
+      const previousGuests = queryClient.getQueryData(["admin", "guests"]);
+      queryClient.setQueryData(["admin", "guests"], (old = []) =>
+        old.map((g) =>
+          g.id === guestId ? { ...g, link_sent: guestData.link_sent } : g
+        )
+      );
+      return { previousGuests };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousGuests) {
+        queryClient.setQueryData(["admin", "guests"], context.previousGuests);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "guests"] });
     },
   });
 
@@ -367,20 +412,30 @@ function Manager() {
     return message;
   };
 
-  const handleCopyGuestMessage = async (guest) => {
+  const buildWhatsappLink = (guest) => {
     const message = buildGuestMessage(guest);
     const digits = guest.phone ? guest.phone.replace(/\D/g, "") : "";
-    const waLink = digits
+    return digits
       ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
       : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  };
 
-    try {
-      await navigator.clipboard.writeText(waLink);
-      setCopiedGuestId(guest.id);
-      setTimeout(() => setCopiedGuestId(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
-    }
+  const handleToggleLinkSent = (guest) => {
+    toggleLinkSentMutation.mutate({
+      guestId: guest.id,
+      guestData: {
+        first_name: guest.first_name,
+        last_name: guest.last_name,
+        nickname: guest.nickname,
+        phone: guest.phone,
+        companion_names: guest.companion_names,
+        group_name: guest.group_name,
+        attending: guest.attending,
+        allergies: guest.allergies,
+        link_generated: guest.link_generated,
+        link_sent: !guest.link_sent,
+      },
+    });
   };
 
   const handleDeleteGuestClick = (guest) => setDeletingGuest(guest);
@@ -564,6 +619,14 @@ function Manager() {
           >
             🧑‍🤝‍🧑 Invitados ({totalGuests})
           </button>
+          <button
+            className={`${styles.tab} ${
+              activeTab === "photos" ? styles.activeTab : ""
+            }`}
+            onClick={() => setActiveTab("photos")}
+          >
+            📸 Fotos ({pendingPhotos.length})
+          </button>
         </div>
 
         {/* Messages Tab */}
@@ -616,6 +679,17 @@ function Manager() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Photos Tab */}
+        {activeTab === "photos" && (
+          <div className={styles.tabContent}>
+            <ManagerPhotos
+              pendingPhotos={pendingPhotos}
+              isLoading={isLoadingPhotos}
+              onReviewError={refetchPhotos}
+            />
           </div>
         )}
 
@@ -726,7 +800,7 @@ function Manager() {
               <>
                 <div className={styles.guestsTableWrapper}>
                   <div className={styles.rankingTable}>
-                    <table className={styles.table}>
+                    <table className={`${styles.table} ${styles.guestsTable}`}>
                       <thead>
                         <tr>
                           <th>UUID</th>
@@ -738,6 +812,7 @@ function Manager() {
                           <th>Confirmado</th>
                           <th>Alergias</th>
                           <th>Generar mensaje</th>
+                          <th>Invitación enviada</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
@@ -791,21 +866,29 @@ function Manager() {
                                 </td>
                                 <td>{parsedAllergies.self || "—"}</td>
                                 <td className={styles.centerCell}>
-                                  <button
+                                  <a
                                     className={styles.messageButton}
-                                    onClick={() =>
-                                      handleCopyGuestMessage(guest)
-                                    }
+                                    href={buildWhatsappLink(guest)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     title={
                                       guest.phone
-                                        ? "Copiar link de WhatsApp"
-                                        : "Sin teléfono — copia el mensaje igual"
+                                        ? "Abrir WhatsApp"
+                                        : "Sin teléfono — abre el selector de contacto"
                                     }
                                   >
-                                    {copiedGuestId === guest.id
-                                      ? "✅ Copiado"
-                                      : "💬 Copiar"}
-                                  </button>
+                                    💬 Abrir WhatsApp
+                                  </a>
+                                </td>
+                                <td className={styles.centerCell}>
+                                  <input
+                                    type="checkbox"
+                                    checked={guest.link_sent || false}
+                                    onChange={() =>
+                                      handleToggleLinkSent(guest)
+                                    }
+                                    title="¿Se envió la invitación?"
+                                  />
                                 </td>
                                 <td>
                                   <div className={styles.guestActions}>
@@ -854,6 +937,7 @@ function Manager() {
                                   <td>—</td>
                                   <td className={styles.centerCell}>—</td>
                                   <td>{companion.allergy || "—"}</td>
+                                  <td>—</td>
                                   <td>—</td>
                                   <td>—</td>
                                 </tr>

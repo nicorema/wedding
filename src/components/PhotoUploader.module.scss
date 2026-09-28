@@ -1,0 +1,57 @@
+.uploader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.9rem 2rem;
+  background: var(--forest-green);
+  color: var(--ivory);
+  border-radius: 999px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--deep-green);
+  }
+}
+
+.isDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input {
+  display: none;
+}
+
+.status {
+  width: 100%;
+  max-width: 360px;
+}
+
+.progressBar {
+  height: 8px;
+  background: rgba(127, 143, 122, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--eucalyptus-green);
+  transition: width 0.3s ease;
+}
+
+.statusText {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--forest-green);
+}

@@ -361,6 +361,20 @@
   }
 }
 
+.guestsTable {
+  font-size: 0.82rem;
+
+  thead th {
+    padding: 0.6rem 0.5rem;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  tbody td {
+    padding: 0.5rem 0.5rem;
+  }
+}
+
 .rankCell {
   font-weight: 700;
   font-size: 1.1rem;
@@ -377,6 +391,7 @@
   font-size: 0.8rem;
   opacity: 0.6;
   white-space: nowrap;
+  min-width: 19rem;
 }
 
 .timeCell {
@@ -470,8 +485,12 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  padding: 0 2rem 5rem;
+  padding: 0 1.5rem 5rem;
   box-sizing: border-box;
+
+  .rankingTable {
+    padding: 1rem;
+  }
 }
 
 .centerCell {
@@ -553,9 +572,9 @@
   border: none;
   background: rgba(127, 143, 122, 0.1);
   border-radius: 6px;
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0.45rem;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.85rem;
   transition: background 0.2s ease;
 
   &:hover {
@@ -568,24 +587,21 @@
 }
 
 .messageButton {
+  display: inline-block;
   border: none;
   background: rgba(37, 211, 102, 0.15);
   color: var(--forest-green);
   border-radius: 6px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.3rem 0.5rem;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
+  text-decoration: none;
   transition: background 0.2s ease;
 
-  &:hover:not(:disabled) {
+  &:hover {
     background: rgba(37, 211, 102, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 }
 
