@@ -24,8 +24,8 @@ def _storage_request(method, path, body=None):
         method=method,
         data=json.dumps(body).encode() if body is not None else None,
         headers={
+            # sb_secret_ keys are not JWTs, so they only go in apikey
             "apikey": key,
-            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
         },
     )
