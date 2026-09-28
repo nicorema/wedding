@@ -1,0 +1,673 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap");
+
+// Palette pulled from the rest of the site's CSS vars (index.css :root),
+// kept as local Sass literals so darken()/lighten() still work at compile time.
+// Coffee/walnut-wood carries the page (matches the dark wood background,
+// borders, ornaments, headings) so everything reads as one family; green is
+// reserved for a single deliberate accent — the "accept" action — instead of
+// competing with the wood tones everywhere.
+$parchment: #f3efe8; // --ivory
+$parchment-dark: #e6ddcf; // --light-sand
+$ink: #4a5d4a; // --forest-green (site's primary text color)
+$forest: #3d4f3d; // --deep-green (accept-button accent only)
+$wood: #8b6a4f; // --walnut-wood (dominant structural color: borders, ornaments, headings)
+$wood-dark: darken(#8b6a4f, 22%);
+$error: #dc3545; // matches the error color used elsewhere on the site
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1.25rem 4rem;
+  background: linear-gradient(180deg, #7a8875 0%, #5f6f5a 45%, #47543f 100%);
+  font-family: "EB Garamond", "Georgia", serif;
+  color: $ink;
+}
+
+.scroll {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.4),
+      transparent 40%
+    ),
+    linear-gradient(180deg, $parchment 0%, $parchment-dark 100%);
+  border: 5px solid $wood-dark;
+  border-radius: 8px;
+  outline: 2px solid $wood;
+  outline-offset: -13px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(139, 106, 79, 0.12);
+  padding: 2.75rem 2.25rem 3rem;
+  position: relative;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.scroll::before,
+.scroll::after {
+  content: "❧";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $forest;
+  font-size: 6rem;
+  line-height: 1;
+  opacity: 0.9;
+}
+.scroll::before {
+  top: 0;
+  left: 0;
+}
+.scroll::after {
+  bottom: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+
+.questHeader {
+  text-align: center;
+  margin-top: 1.5rem;
+  margin-bottom: 1.75rem;
+  animation: fadeInUp 0.8s ease-out 0.1s both;
+}
+
+.headerPhoto {
+  width: 220px;
+  height: auto;
+  border-radius: 10px;
+  border: 4px solid $wood;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1.25rem;
+}
+
+.questTitle {
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: 2.2rem;
+  color: $wood-dark;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.questGiver {
+  font-family: "Cinzel", serif;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: $ink;
+  opacity: 0.85;
+  margin-bottom: 1.25rem;
+}
+
+.flavorText {
+  font-size: 1.2rem;
+  line-height: 1.75;
+  color: $ink;
+  max-width: 540px;
+  margin: 0 auto;
+  opacity: 0.95;
+}
+
+.gallery {
+  width: 100%;
+  margin-bottom: 2rem;
+  text-align: center;
+  animation: fadeInUp 0.8s ease-out 0.12s both;
+}
+
+.galleryLabel {
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $wood-dark;
+  opacity: 0.9;
+  margin-bottom: 1.1rem;
+}
+
+.galleryRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.galleryPhoto {
+  width: 150px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 6px solid $parchment;
+  outline: 2px solid $wood;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.28);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05) rotate(0deg) !important;
+  }
+}
+
+.tiltLeft {
+  transform: rotate(-6deg);
+}
+
+.tiltRight {
+  transform: rotate(6deg);
+}
+
+.tiltNone {
+  transform: rotate(0deg) translateY(-8px);
+}
+
+.characterCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid $wood-dark;
+  border-radius: 12px;
+  padding: 1.1rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: inset 0 0 20px rgba(139, 106, 79, 0.1);
+  animation: fadeInUp 0.8s ease-out 0.15s both;
+}
+
+.characterCardLabel {
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $wood-dark;
+  opacity: 0.9;
+}
+
+.characterCardName {
+  font-family: "Cinzel", serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $ink;
+}
+
+.objectives {
+  width: 100%;
+  margin-bottom: 2.25rem;
+  animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.objectivesTitle {
+  font-family: "Cinzel", serif;
+  text-align: center;
+  font-size: 1.3rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: $wood-dark;
+  margin-bottom: 1.25rem;
+
+  &::before,
+  &::after {
+    content: "—";
+    color: $wood;
+    margin: 0 0.6rem;
+  }
+}
+
+.objectiveList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.objectiveItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(139, 106, 79, 0.3);
+  border-left: 4px solid $wood-dark;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+}
+
+.objectiveIcon {
+  font-size: 1.7rem;
+  line-height: 1.4;
+}
+
+.objectiveText {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: $ink;
+
+  strong {
+    color: $wood-dark;
+  }
+}
+
+.armorList {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+}
+
+.armorEmoji {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.sheet {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid $wood-dark;
+  border-radius: 12px;
+  padding: 2rem 1.75rem;
+  box-shadow: inset 0 0 30px rgba(139, 106, 79, 0.1);
+  animation: fadeInUp 0.8s ease-out 0.25s both;
+}
+
+.sheetTitle {
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: 1.6rem;
+  text-align: center;
+  color: $wood-dark;
+  margin-bottom: 0.5rem;
+}
+
+.sheetSubtitle {
+  font-size: 1.02rem;
+  text-align: center;
+  color: $ink;
+  opacity: 0.85;
+  margin-bottom: 1.75rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.85rem;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.blockLabel {
+  font-family: "Cinzel", serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $wood-dark;
+  text-align: center;
+}
+
+.softNote {
+  font-size: 1.05rem;
+  color: $ink;
+  opacity: 0.95;
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.choiceRow {
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.questButton {
+  font-family: "Cinzel", serif;
+  padding: 0.95rem 1.7rem;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: $parchment;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+.acceptButton {
+  background: linear-gradient(160deg, $forest, darken($forest, 12%));
+  border-color: darken($forest, 15%);
+
+  &:hover {
+    background: linear-gradient(160deg, lighten($forest, 6%), $forest);
+    transform: translateY(-2px);
+  }
+}
+
+.declineButton {
+  background: linear-gradient(160deg, $wood, $wood-dark);
+  border-color: darken($wood, 15%);
+
+  &:hover {
+    background: linear-gradient(160deg, lighten($wood, 5%), $wood-dark);
+    transform: translateY(-2px);
+  }
+}
+
+.choiceSelected {
+  outline: 3px solid $parchment;
+  outline-offset: 2px;
+}
+
+.traitButton {
+  font-family: "EB Garamond", serif;
+  padding: 0.65rem 1.35rem;
+  border: 2px solid $wood-dark;
+  background: rgba(255, 255, 255, 0.55);
+  color: $ink;
+  border-radius: 999px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $wood;
+    background: rgba(139, 106, 79, 0.12);
+  }
+}
+
+.traitButton.choiceSelected {
+  background: $wood-dark;
+  border-color: $wood-dark;
+  color: $parchment;
+  outline: none;
+}
+
+.textInput,
+.textArea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 2px solid rgba(139, 106, 79, 0.45);
+  border-radius: 8px;
+  font-size: 1.02rem;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.65);
+  color: $ink;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $wood;
+  }
+}
+
+.errorText {
+  text-align: center;
+  color: $error;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.declineText {
+  text-align: center;
+  font-size: 1.05rem;
+  color: $ink;
+  line-height: 1.7;
+  background: rgba(139, 106, 79, 0.1);
+  border: 1px dashed $wood-dark;
+  border-radius: 10px;
+  padding: 1.1rem;
+}
+
+.stampOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+}
+
+.stampMark {
+  display: block;
+  width: 90px;
+  height: 90px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.4));
+  animation: stampDown 0.7s cubic-bezier(0.36, 1.7, 0.5, 1) both;
+}
+
+@keyframes stampDown {
+  0% {
+    transform: translateY(-70px) scale(1.5) rotate(-25deg);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(6px) scale(0.94) rotate(-3deg);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-3px) scale(1.04) rotate(-7deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+}
+
+.submitButton {
+  font-family: "Cinzel", serif;
+  padding: 1.05rem 2rem;
+  background: linear-gradient(160deg, $wood, $wood-dark);
+  color: $parchment;
+  border: 2px solid darken($wood, 18%);
+  border-radius: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(160deg, lighten($wood, 6%), $wood);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.savedNote {
+  text-align: center;
+  font-size: 0.98rem;
+  color: $wood-dark;
+  opacity: 0.9;
+}
+
+.questComplete {
+  position: relative;
+  margin-top: 0.5rem;
+  padding: 2.25rem 2rem 1.75rem;
+  background: radial-gradient(
+      ellipse at 15% 20%,
+      rgba(139, 106, 79, 0.16),
+      transparent 55%
+    ),
+    radial-gradient(ellipse at 85% 80%, rgba(139, 106, 79, 0.16), transparent 55%),
+    $parchment;
+  border: 2px solid $wood-dark;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.4);
+  animation: fadeInUp 0.6s ease-out both;
+  text-align: center;
+}
+
+.sealWrapper {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.seal {
+  display: block;
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  cursor: pointer;
+  animation: stampDown 0.6s cubic-bezier(0.36, 1.7, 0.5, 1) both;
+}
+
+.questCompleteKicker {
+  font-family: "Cinzel", serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: $wood-dark;
+  margin-bottom: 0.4rem;
+}
+
+.questCompleteXp {
+  font-family: "Cinzel", serif;
+  font-size: 0.92rem;
+  letter-spacing: 1.5px;
+  color: $wood-dark;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.questCompleteBody {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: $ink;
+  opacity: 0.95;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.questCompleteSign {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: $ink;
+  opacity: 0.9;
+}
+
+.detailsLink {
+  margin-top: 1.75rem;
+  display: inline-block;
+  font-family: "Cinzel", serif;
+  color: $wood-dark;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  border: 2px solid $wood-dark;
+  border-radius: 999px;
+  padding: 0.8rem 1.85rem;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: $wood-dark;
+    color: $parchment;
+  }
+}
+
+.deadlineNote {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 1.05rem;
+  color: $ink;
+  opacity: 0.95;
+  max-width: 480px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 2rem 0.85rem 3rem;
+  }
+
+  .scroll {
+    padding: 2.25rem 1.25rem 2.5rem;
+  }
+
+  .scroll::before,
+  .scroll::after {
+    width: 80px;
+    height: 80px;
+    font-size: 4rem;
+  }
+
+  .questTitle {
+    font-size: 1.7rem;
+  }
+
+  .headerPhoto {
+    width: 180px;
+  }
+
+  .flavorText {
+    font-size: 1.05rem;
+  }
+
+  .characterCardName {
+    font-size: 1.3rem;
+  }
+
+  .galleryPhoto {
+    width: 105px;
+    height: 130px;
+    border-width: 4px;
+  }
+
+  .galleryRow {
+    gap: 0.85rem;
+  }
+
+  .sheet {
+    padding: 1.5rem 1.1rem;
+  }
+
+  .sheetTitle {
+    font-size: 1.35rem;
+  }
+
+  .questButton {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  .traitButton {
+    padding: 0.6rem 1.05rem;
+    font-size: 0.95rem;
+  }
+}

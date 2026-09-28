@@ -433,36 +433,54 @@ function Manager() {
 
     if (hasUnconfirmedCompanion) {
       return `¡Hola, ${name}! 💌
+
 Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ti: *entregarte oficialmente tu invitación de boda*. ✨
+
 Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
-🎟️ En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura. También podrás confirmar tu asistencia y registrar los datos de la persona que quieras llevar como tu acompañante. *¡La elección de tu +1 queda en tus manos!* ✨
+
+🎟️ *En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura.* También podrás *confirmar tu asistencia* y registrar los datos de la persona que quieras llevar como tu acompañante. *¡La elección de tu +1 queda en tus manos!* ✨
+
 ${invitationUrl}
-📋 Te pedimos completar la información tuya y la de tu acompañante, y confirmar tu asistencia *a más tardar el 1 de diciembre de 2026*.`;
+
+📋 *Te pedimos completar la información tuya y la de tu acompañante, y confirmar tu asistencia a más tardar el 1 de diciembre de 2026.*`;
     }
 
     if (isPlural) {
       return `¡Hola, ${name}! 💌
+
 Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ustedes: *entregarles oficialmente su invitación de boda*. ✨
+
 Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
-🎟️ En el siguiente link encontrarán su invitación y todos los detalles de esta aventura. También podrán confirmar su asistencia y contarnos la información que necesitamos para ese día:
+
+🎟️ *En el siguiente link encontrarán su invitación y todos los detalles de esta aventura.* También podrán *confirmar su asistencia* y contarnos la información que necesitamos para ese día:
+
 ${invitationUrl}
-📋 Les pedimos completar la información y confirmar su asistencia *a más tardar el 1 de diciembre de 2026*.`;
+
+📋 *Les pedimos completar la información y confirmar su asistencia a más tardar el 1 de diciembre de 2026.*`;
     }
 
     return `¡Hola, ${name}! 💌
+
 Soy la Wedding Planner de Caro y Nico, y tengo una misión muy especial para ti: *entregarte oficialmente tu invitación de boda*. ✨
+
 Después de tantos años de historia, llegó el momento de celebrar su amor y comenzar juntos este nuevo capítulo. 💍 Y, como toda buena aventura, esta no estaría completa sin las personas que han sido parte de su camino.
-🎟️ En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura. También podrás confirmar tu asistencia y contarnos la información que necesitamos para ese día:
+
+🎟️ *En el siguiente link encontrarás tu invitación y todos los detalles de esta aventura.* También podrás *confirmar tu asistencia* y contarnos la información que necesitamos para ese día:
+
 ${invitationUrl}
-📋 Te pedimos completar la información y confirmar tu asistencia *a más tardar el 1 de diciembre de 2026*.`;
+
+📋 *Te pedimos completar la información y confirmar tu asistencia a más tardar el 1 de diciembre de 2026.*`;
   };
 
   const buildWhatsappLink = (guest) => {
     const message = buildGuestMessage(guest);
     const digits = guest.phone ? guest.phone.replace(/\D/g, "") : "";
-    // wa.me's redirect mangles emojis into "?"; api.whatsapp.com keeps them.
     const phoneParam = digits ? `phone=${digits}&` : "";
-    return `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(message)}`;
+    // The WhatsApp desktop app turns emojis into "?" and drops line breaks,
+    // so on a computer open WhatsApp Web; on a phone open the app.
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    const host = isMobile ? "api.whatsapp.com" : "web.whatsapp.com";
+    return `https://${host}/send?${phoneParam}text=${encodeURIComponent(message)}`;
   };
 
   const handleToggleLinkSent = (guest) => {

@@ -9,8 +9,10 @@ import Games from "./pages/Games";
 import Photos from "./pages/Photos";
 import Messages from "./pages/Messages";
 import Details from "./pages/Details";
+import Details2 from "./pages/Details2";
+import Details3 from "./pages/Details3";
 import Manager from "./pages/Manager";
-import Invitation from "./pages/Invitation";
+import InvitationRPG from "./pages/InvitationRPG";
 
 function App() {
   return (
@@ -23,7 +25,7 @@ function App() {
             element={<Navigate to="/manager/mensajes" replace />}
           />
           <Route path="/manager/:section" element={<Manager />} />
-          <Route path="/invitacion" element={<Invitation />} />
+          <Route path="/invitacion" element={<InvitationRPG />} />
           <Route
             path="/"
             element={
@@ -77,6 +79,22 @@ function App() {
             element={
               <Layout>
                 <Details />
+              </Layout>
+            }
+          />
+          <Route
+            path="/detalles2"
+            element={
+              <Layout>
+                <Details2 />
+              </Layout>
+            }
+          />
+          <Route
+            path="/detalles3"
+            element={
+              <Layout>
+                <Details3 />
               </Layout>
             }
           />

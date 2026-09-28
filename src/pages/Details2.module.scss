@@ -1,0 +1,286 @@
+.details {
+  padding: 1rem 0 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.kicker {
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--walnut-wood);
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.title {
+  font-size: 2.75rem;
+  color: var(--forest-green);
+  font-weight: 600;
+  font-family: "Georgia", serif;
+  letter-spacing: 1px;
+  animation: fadeInUp 0.8s ease-out 0.1s both;
+}
+
+// ---------- Ticket ----------
+
+.ticket {
+  display: flex;
+  max-width: 780px;
+  margin: 0 auto 4rem;
+  background: #fffdf9;
+  border: 2px solid var(--forest-green);
+  border-radius: 6px;
+  box-shadow: 0 16px 32px rgba(95, 111, 90, 0.2);
+  animation: fadeInUp 0.8s ease-out 0.2s both;
+  overflow: hidden;
+}
+
+.ticketMain {
+  flex: 2.2;
+  padding: 2.25rem 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ticketRow {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.ticketField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ticketLabel {
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--walnut-wood);
+  opacity: 0.7;
+}
+
+.ticketValue {
+  font-size: 1.6rem;
+  font-family: "Georgia", serif;
+  font-weight: 600;
+  color: var(--forest-green);
+}
+
+.ticketSub {
+  font-size: 0.95rem;
+  color: var(--forest-green);
+  opacity: 0.75;
+  margin-top: 0.15rem;
+}
+
+.ticketLink {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--eucalyptus-green);
+  text-decoration: none;
+  border-bottom: 2px solid var(--eucalyptus-green);
+  padding-bottom: 0.15rem;
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.ticketPerforation {
+  flex: 0 0 0;
+  position: relative;
+  width: 0;
+  border-left: 3px dashed rgba(74, 93, 74, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.perfDot {
+  display: none;
+}
+
+.ticketStub {
+  flex: 1;
+  background: var(--forest-green);
+  color: var(--ivory);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.barcode {
+  width: 100%;
+  height: 44px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ivory) 0px,
+    var(--ivory) 2px,
+    transparent 2px,
+    transparent 5px,
+    var(--ivory) 5px,
+    var(--ivory) 6px,
+    transparent 6px,
+    transparent 10px
+  );
+  opacity: 0.85;
+}
+
+.stubBig {
+  font-family: "Courier New", monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.stubNote {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+// ---------- Manifest (flight-rules style list) ----------
+
+.manifest {
+  max-width: 700px;
+  margin: 0 auto 2rem;
+}
+
+.manifestTitle {
+  font-family: "Courier New", monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--walnut-wood);
+  text-align: center;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+
+.manifestItem {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 0;
+  border-bottom: 1px dashed rgba(74, 93, 74, 0.3);
+}
+
+.manifestLabel {
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--forest-green);
+  flex-shrink: 0;
+}
+
+.manifestLeader {
+  flex: 1;
+  min-width: 20px;
+  border-bottom: 1px dotted rgba(74, 93, 74, 0.4);
+  transform: translateY(-4px);
+}
+
+.manifestText {
+  flex-basis: 100%;
+  font-size: 1rem;
+  color: var(--forest-green);
+  opacity: 0.9;
+  line-height: 1.6;
+
+  strong {
+    color: var(--eucalyptus-green);
+  }
+}
+
+
+.signature {
+  text-align: center;
+  font-size: 1.15rem;
+  color: var(--forest-green);
+  font-style: italic;
+  opacity: 0.85;
+  margin-top: 3rem;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px) {
+  .ticket {
+    flex-direction: column;
+  }
+
+  .ticketPerforation {
+    width: auto;
+    height: 0;
+    border-left: none;
+    border-top: 3px dashed rgba(74, 93, 74, 0.35);
+    flex-direction: row;
+  }
+
+  .ticketStub {
+    padding: 1.5rem;
+  }
+
+  .ticketRow {
+    gap: 1.5rem;
+  }
+
+  .ticketValue {
+    font-size: 1.35rem;
+  }
+
+  .manifestItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .manifestLeader {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 2.1rem;
+  }
+
+  .ticketMain {
+    padding: 1.75rem 1.5rem;
+  }
+}

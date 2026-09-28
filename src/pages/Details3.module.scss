@@ -1,0 +1,174 @@
+.bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: linear-gradient(160deg, #3d4f3d 0%, #2a352a 100%);
+  padding: 5rem 1.5rem 6rem;
+  box-sizing: border-box;
+}
+
+.inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  text-align: center;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--soft-amber);
+  opacity: 0.85;
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.title {
+  text-align: center;
+  font-size: 4.5rem;
+  font-family: "Georgia", serif;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--ivory);
+  margin-bottom: 4rem;
+  animation: fadeInUp 0.8s ease-out 0.1s both;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 2.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.rowReverse {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.rowReverse .rowContent {
+  align-items: flex-end;
+}
+
+.rowNumber {
+  flex-shrink: 0;
+  font-family: "Georgia", serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--soft-amber);
+  opacity: 0.3;
+  width: 110px;
+  text-align: center;
+}
+
+.rowContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rowTitle {
+  font-size: 1.85rem;
+  font-family: "Georgia", serif;
+  font-weight: 600;
+  color: var(--ivory);
+  letter-spacing: 0.5px;
+}
+
+.rowText {
+  font-size: 1.05rem;
+  color: rgba(243, 239, 232, 0.75);
+  line-height: 1.75;
+  max-width: 520px;
+}
+
+.rowButton {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  color: var(--soft-amber);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid var(--soft-amber);
+  padding-bottom: 0.2rem;
+  transition: opacity 0.25s ease;
+
+  &:hover {
+    opacity: 0.65;
+  }
+}
+
+.rowReverse .rowButton {
+  align-self: flex-end;
+}
+
+.signature {
+  text-align: center;
+  font-size: 1.3rem;
+  color: var(--soft-amber);
+  font-style: italic;
+  opacity: 0.9;
+  margin-top: 4rem;
+  letter-spacing: 1px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px) {
+  .title {
+    font-size: 3rem;
+    letter-spacing: 2px;
+    margin-bottom: 2.5rem;
+  }
+
+  .bleed {
+    padding: 3.5rem 1.25rem 4rem;
+  }
+
+  .row,
+  .rowReverse {
+    flex-direction: column;
+    text-align: left;
+    gap: 0.75rem;
+    padding: 2rem 0;
+  }
+
+  .rowReverse .rowContent,
+  .rowReverse .rowButton {
+    align-items: flex-start;
+    align-self: flex-start;
+  }
+
+  .rowNumber {
+    width: auto;
+    font-size: 2.5rem;
+    text-align: left;
+    opacity: 0.4;
+  }
+
+  .rowTitle {
+    font-size: 1.5rem;
+  }
+
+  .rowText {
+    max-width: 100%;
+  }
+}

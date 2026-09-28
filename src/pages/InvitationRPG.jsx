@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import styles from "./Invitation.module.scss";
-import couplePhoto from "../assets/couple-photo.png";
-import kissPhoto from "../assets/kiss-photo.png";
-import canalPhoto from "../assets/canal-photo.png";
+import AudioPlayer from "../components/AudioPlayer";
+import styles from "./InvitationRPG.module.scss";
+import invitationPhoto1 from "../assets/invitation-1.jpg";
+import invitationPhoto2 from "../assets/invitation-2.jpg";
+import invitationPhoto3 from "../assets/invitation-3.jpg";
+import invitationPhoto4 from "../assets/invitation-4.jpg";
 
 const getGreetingName = (guest) => {
   if (guest.group_name) return guest.group_name;
@@ -48,7 +50,7 @@ const parseAllergiesByName = (text) => {
   return matched ? byName : null;
 };
 
-function Invitation() {
+function InvitationRPG() {
   const [searchParams] = useSearchParams();
   const uuid = searchParams.get("uuid");
   const [guest, setGuest] = useState(null);
@@ -61,8 +63,8 @@ function Invitation() {
   const [submitting, setSubmitting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [isRolling, setIsRolling] = useState(false);
-  const [diceFace, setDiceFace] = useState(20);
+  const [isStamping, setIsStamping] = useState(false);
+  const [sealReplayKey, setSealReplayKey] = useState(0);
 
   useEffect(() => {
     const meta = document.createElement("meta");
@@ -84,9 +86,6 @@ function Invitation() {
   };
 
   useEffect(() => {
-    // TODO: temporarily using fallbackGuest for missing/invalid uuid so we
-    // have something to demo. Bring back the redirect-to-"/" guard
-    // (Navigate to="/" replace on notFound) before this goes live.
     if (!uuid) {
       setGuest(fallbackGuest);
       setAttending(null);
@@ -159,6 +158,8 @@ function Invitation() {
   ];
 
   const setPersonChoice = (key, choice) => {
+    setJustSaved(false);
+    setIsStamping(false);
     setPersonAllergies((prev) => ({
       ...prev,
       [key]: { choice, text: choice === "other" ? prev[key]?.text || "" : "" },
@@ -166,6 +167,8 @@ function Invitation() {
   };
 
   const setPersonText = (key, text) => {
+    setJustSaved(false);
+    setIsStamping(false);
     setPersonAllergies((prev) => ({
       ...prev,
       [key]: { ...prev[key], text },
@@ -186,12 +189,7 @@ function Invitation() {
 
     setSubmitting(true);
     setSubmitError("");
-    setIsRolling(true);
-
-    // Roll a d20 for flavor while the actual save happens in parallel.
-    const rollInterval = setInterval(() => {
-      setDiceFace(1 + Math.floor(Math.random() * 20));
-    }, 80);
+    setIsStamping(true);
 
     let allergiesToSave = null;
     if (attending) {
@@ -220,24 +218,18 @@ function Invitation() {
             companion_names: attending ? companionNames : undefined,
           }),
         }),
-        new Promise((resolve) => setTimeout(resolve, 900)),
+        new Promise((resolve) => setTimeout(resolve, 750)),
       ]);
-
-      clearInterval(rollInterval);
-      setDiceFace(20);
-      setIsRolling(false);
 
       if (!response.ok) {
         throw new Error("No se pudo guardar tu respuesta");
       }
 
+      setIsStamping(false);
       setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 6000);
     } catch (err) {
-      clearInterval(rollInterval);
-      setIsRolling(false);
       setSubmitError(
-        "No pudimos guardar tu respuesta. Por favor intenta de nuevo."
+        "El mensajero no pudo llegar al castillo. Por favor intenta de nuevo."
       );
     } finally {
       setSubmitting(false);
@@ -248,132 +240,188 @@ function Invitation() {
     attending !== null && (!attending || allAllergiesAnswered) && !submitting;
 
   return (
-    <div className={styles.invitation}>
-      <div className={styles.content}>
-        <div className={styles.header}>
-          <div className={styles.icon}>💌</div>
-          <h1 className={styles.title}>Hola {getGreetingName(guest)}</h1>
-          <p className={styles.message}>
+    <div className={styles.page}>
+      <AudioPlayer src="/invitacion.mp3" autoPlay={true} />
+      <div className={styles.scroll}>
+        <div className={styles.questHeader}>
+          <img
+            src={invitationPhoto4}
+            alt="Nico y Caro"
+            className={styles.headerPhoto}
+          />
+          <h1 className={styles.questTitle}>La Alianza de Nico &amp; Caro</h1>
+          <p className={styles.questGiver}>
+            Misión ofrecida por los futuros esposos
+          </p>
+          <p className={styles.flavorText}>
             {isPlural ? (
               <>
-                Estamos muy felices de invitarlos a celebrar con nosotros uno
-                de los días más importantes de nuestras vidas. Su presencia
-                significaría muchísimo para nosotros, así que queremos saber
-                si contamos con ustedes.
+                Se busca a valientes aliados para presenciar la unión de dos
+                almas. Vuestra presencia significaría muchísimo para
+                nosotros — solo necesitamos saber si emprenderán el viaje con nosotros.
               </>
             ) : (
               <>
-                Estamos muy felices de invitarte a celebrar con nosotros uno
-                de los días más importantes de nuestras vidas. Tu presencia
-                significaría muchísimo para nosotros, así que queremos saber
-                si contamos contigo.
+                Se busca a un valiente aliado para presenciar la unión de dos
+                almas. Tu presencia significaría muchísimo para nosotros —
+                solo necesitamos saber si emprenderás el viaje con nosotros.
               </>
             )}
           </p>
         </div>
 
         <div className={styles.gallery}>
-          <img
-            src={couplePhoto}
-            alt="Nico y Caro"
-            className={`${styles.galleryPhoto} ${styles.tiltLeft}`}
-          />
-          <img
-            src={kissPhoto}
-            alt="Nico y Caro"
-            className={`${styles.galleryPhoto} ${styles.tiltNone}`}
-          />
-          <img
-            src={canalPhoto}
-            alt="Nico y Caro"
-            className={`${styles.galleryPhoto} ${styles.tiltRight}`}
-          />
-        </div>
-
-        <div className={styles.quickDetails}>
-          <div className={styles.quickDetailItem}>
-            <div className={styles.quickDetailIcon}>📅</div>
-            <p className={styles.quickDetailText}>
-              <strong>16 de enero, 2027</strong>
-              <br />
-              3:00 p.m.
-            </p>
-          </div>
-          <div className={styles.quickDetailItem}>
-            <div className={styles.quickDetailIcon}>📍</div>
-            <p className={styles.quickDetailText}>
-              <strong>Retiro San Juan</strong>
-              <br />
-              Autopista Norte No. 212, Km 13 Vía Arrayanes, Bogotá
-            </p>
-          </div>
-          <div className={styles.quickDetailItem}>
-            <div className={styles.quickDetailIcon}>👔</div>
-            <p className={styles.quickDetailText}>
-              <strong>Formal:</strong> traje con corbata para ellos, vestido
-              largo para ellas
-              <br />
-              Combinado con tenis 👟 — nada de zapatos
-              <br />
-              El blanco queda reservado para la novia
-            </p>
+          <p className={styles.galleryLabel}>Retratos de la travesía</p>
+          <div className={styles.galleryRow}>
+            <img
+              src={invitationPhoto2}
+              alt="Nico y Caro"
+              className={`${styles.galleryPhoto} ${styles.tiltLeft}`}
+            />
+            <img
+              src={invitationPhoto3}
+              alt="Nico y Caro"
+              className={`${styles.galleryPhoto} ${styles.tiltNone}`}
+            />
+            <img
+              src={invitationPhoto1}
+              alt="Nico y Caro"
+              className={`${styles.galleryPhoto} ${styles.tiltRight}`}
+            />
           </div>
         </div>
 
-        <div className={styles.formCard}>
-          <h2 className={styles.formTitle}>Confirma tu asistencia</h2>
+        <div className={styles.characterCard}>
+          <span className={styles.characterCardLabel}>Aventurero convocado</span>
+          <span className={styles.characterCardName}>{getGreetingName(guest)}</span>
+        </div>
+
+        <div className={styles.objectives}>
+          <p className={styles.objectivesTitle}>Detalles de la misión</p>
+          <div className={styles.objectiveList}>
+            <div className={styles.objectiveItem}>
+              <span className={styles.objectiveIcon}>🗓️</span>
+              <p className={styles.objectiveText}>
+                <strong>16 de enero, 2027</strong>
+                <br />
+                3:00 p.m.
+              </p>
+            </div>
+            <div className={styles.objectiveItem}>
+              <span className={styles.objectiveIcon}>🏰</span>
+              <p className={styles.objectiveText}>
+                <strong>Retiro San Juan</strong>
+                <br />
+                Autopista Norte No. 212, Km 13 Vía Arrayanes, Bogotá
+              </p>
+            </div>
+            <div className={styles.objectiveItem}>
+              <span className={styles.objectiveIcon}>⚔️</span>
+              <div className={styles.objectiveText}>
+                <strong>Armadura requerida</strong>
+                <ul className={styles.armorList}>
+                  <li>
+                    <span className={styles.armorEmoji}>👔👗</span>
+                    <span>
+                      Traje con corbata para ellos, vestido largo para ellas
+                    </span>
+                  </li>
+                  <li>
+                    <span className={styles.armorEmoji}>👟</span>
+                    <span>
+                      Combinado con <strong>TENIS</strong> para bailar — los
+                      zapatos de batalla se quedan para los goblins y los
+                      orcos
+                    </span>
+                  </li>
+                  <li>
+                    <span className={styles.armorEmoji}>🤍</span>
+                    <span>El blanco queda reservado para la novia</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className={styles.objectiveItem}>
+              <span className={styles.objectiveIcon}>🛡️</span>
+              <p className={styles.objectiveText}>
+                <strong>Misión solo para adultos</strong>
+                <br />
+                Los pequeños escuderos se quedan custodiando el castillo — no
+                se admiten niños en esta aventura
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sheet}>
+          <h2 className={styles.sheetTitle}>Hoja de misión</h2>
+          <p className={styles.sheetSubtitle}>
+            Confirma aquí tu asistencia a la boda
+          </p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.question}>
-              <p className={styles.questionLabel}>¿Nos acompañas?</p>
-              <div className={styles.optionRow}>
+            <div className={styles.block}>
+              <p className={styles.blockLabel}>¿Aceptas esta misión?</p>
+              <div className={styles.choiceRow}>
                 <button
                   type="button"
-                  className={`${styles.optionButton} ${
-                    attending === true ? styles.optionSelected : ""
+                  className={`${styles.questButton} ${styles.acceptButton} ${
+                    attending === true ? styles.choiceSelected : ""
                   }`}
-                  onClick={() => setAttending(true)}
+                  onClick={() => {
+                    setJustSaved(false);
+                    setIsStamping(false);
+                    setAttending(true);
+                  }}
                 >
-                  ¡Sí, ahí estaré! 🎉
+                  Aceptar la misión ⚔️
                 </button>
                 <button
                   type="button"
-                  className={`${styles.optionButton} ${
-                    attending === false ? styles.optionSelected : ""
+                  className={`${styles.questButton} ${styles.declineButton} ${
+                    attending === false ? styles.choiceSelected : ""
                   }`}
-                  onClick={() => setAttending(false)}
+                  onClick={() => {
+                    setJustSaved(false);
+                    setIsStamping(false);
+                    setAttending(false);
+                  }}
                 >
-                  No podré ir 😢
+                  No podré unirme a la aventura
                 </button>
               </div>
               <p className={styles.softNote}>
-                Cualquiera de las dos respuestas nos sirve muchísimo para
-                organizar todo — ¡lo importante es que nos cuentes!
+                Cualquiera de las dos respuestas nos sirve para planear la
+                aventura — lo importante es que el mensajero regrese con
+                noticias tuyas.
               </p>
             </div>
 
             {attending === false && (
-              <p className={styles.understandText}>
-                Entendemos que no puedas acompañarnos. ¡Te vamos a extrañar
-                ese día! Gracias por avisarnos.
+              <p className={styles.declineText}>
+                Entendemos que el camino no te permita acompañarnos esta vez.
+                ¡Se te extrañará en la taberna del festejo! Gracias por
+                avisarnos.
               </p>
             )}
 
             {attending === true && pendingIndexes.length > 0 && (
-              <div className={styles.question}>
-                <p className={styles.questionLabel}>
+              <div className={styles.block}>
+                <p className={styles.blockLabel}>
                   {pendingIndexes.length > 1
-                    ? "Puedes traer acompañantes. Si ya sabes quiénes son, cuéntanos sus nombres:"
-                    : "Puedes traer acompañante. Si ya sabes quién es, cuéntanos su nombre:"}
+                    ? "Puedes nombrar a tus compañeros de aventura:"
+                    : "Puedes nombrar a tu compañero de aventura:"}
                 </p>
                 {pendingIndexes.map((index) => (
                   <input
                     key={index}
                     type="text"
-                    className={styles.allergiesInput}
-                    placeholder="Nombre de tu acompañante"
+                    className={styles.textInput}
+                    placeholder="Nombre del compañero"
                     value={companionNames[index] || ""}
                     onChange={(e) => {
+                      setJustSaved(false);
+                      setIsStamping(false);
                       const updated = [...companionNames];
                       updated[index] = e.target.value;
                       setCompanionNames(updated);
@@ -387,17 +435,17 @@ function Invitation() {
               people.map((person) => {
                 const entry = personAllergies[person.key] || {};
                 return (
-                  <div className={styles.question} key={person.key}>
-                    <p className={styles.questionLabel}>
+                  <div className={styles.block} key={person.key}>
+                    <p className={styles.blockLabel}>
                       {people.length > 1
-                        ? `¿${person.name} tiene alguna alergia o restricción alimenticia?`
-                        : "¿Tienes alguna alergia o restricción alimenticia?"}
+                        ? `¿${person.name} carga alguna condición alimenticia?`
+                        : "¿Cargas alguna condición alimenticia?"}
                     </p>
-                    <div className={styles.optionRow}>
+                    <div className={styles.choiceRow}>
                       <button
                         type="button"
-                        className={`${styles.optionButton} ${
-                          entry.choice === "none" ? styles.optionSelected : ""
+                        className={`${styles.traitButton} ${
+                          entry.choice === "none" ? styles.choiceSelected : ""
                         }`}
                         onClick={() => setPersonChoice(person.key, "none")}
                       >
@@ -405,9 +453,9 @@ function Invitation() {
                       </button>
                       <button
                         type="button"
-                        className={`${styles.optionButton} ${
+                        className={`${styles.traitButton} ${
                           entry.choice === "vegetarian"
-                            ? styles.optionSelected
+                            ? styles.choiceSelected
                             : ""
                         }`}
                         onClick={() =>
@@ -418,8 +466,8 @@ function Invitation() {
                       </button>
                       <button
                         type="button"
-                        className={`${styles.optionButton} ${
-                          entry.choice === "vegan" ? styles.optionSelected : ""
+                        className={`${styles.traitButton} ${
+                          entry.choice === "vegan" ? styles.choiceSelected : ""
                         }`}
                         onClick={() => setPersonChoice(person.key, "vegan")}
                       >
@@ -427,8 +475,8 @@ function Invitation() {
                       </button>
                       <button
                         type="button"
-                        className={`${styles.optionButton} ${
-                          entry.choice === "other" ? styles.optionSelected : ""
+                        className={`${styles.traitButton} ${
+                          entry.choice === "other" ? styles.choiceSelected : ""
                         }`}
                         onClick={() => setPersonChoice(person.key, "other")}
                       >
@@ -438,7 +486,7 @@ function Invitation() {
 
                     {entry.choice === "other" && (
                       <textarea
-                        className={styles.allergiesInput}
+                        className={styles.textArea}
                         placeholder="Cuéntanos cuál..."
                         value={entry.text || ""}
                         onChange={(e) =>
@@ -451,16 +499,16 @@ function Invitation() {
                 );
               })}
 
-            {submitError && (
-              <p className={styles.errorText}>{submitError}</p>
-            )}
+            {submitError && <p className={styles.errorText}>{submitError}</p>}
 
-            {isRolling && (
-              <div className={styles.diceOverlay}>
-                <div className={styles.die}>
-                  <span className={styles.dieFace}>{diceFace}</span>
-                </div>
-                <p className={styles.diceCaption}>Tirando un d20...</p>
+            {isStamping && (
+              <div className={styles.stampOverlay}>
+                <img
+                  src="/wax.png"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.stampMark}
+                />
               </div>
             )}
 
@@ -469,35 +517,44 @@ function Invitation() {
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              {isRolling
-                ? "Tirando..."
+              {submitting
+                ? "Sellando..."
                 : justSaved
-                ? "¡Guardado! ✅"
-                : "Confirmar respuesta"}
+                ? "¡Misión registrada! ✅"
+                : "Sellar tu respuesta"}
             </button>
 
             {guest.attending !== null && !justSaved && (
               <p className={styles.savedNote}>
-                Ya tenemos tu respuesta guardada. Puedes actualizarla cuando
-                quieras.
+                Ya tenemos tu respuesta en el gran registro. Puedes
+                actualizarla cuando quieras.
               </p>
             )}
 
             {justSaved && (
-              <div className={styles.acceptanceLetter}>
-                <div className={styles.waxSeal}>N&amp;C</div>
-                <p className={styles.letterKicker}>
-                  Oficina de Eventos Mágicos
+              <div className={styles.questComplete}>
+                <div className={styles.sealWrapper}>
+                  <img
+                    key={sealReplayKey}
+                    src="/wax.png"
+                    alt=""
+                    aria-hidden="true"
+                    className={styles.seal}
+                    onClick={() => setSealReplayKey((k) => k + 1)}
+                  />
+                </div>
+                <p className={styles.questCompleteKicker}>Misión completada</p>
+                <p className={styles.questCompleteXp}>
+                  +100 XP · Registro actualizado
                 </p>
-                <p className={styles.letterGreeting}>
-                  Querido/a {getGreetingName(guest)}:
-                </p>
-                <p className={styles.letterBody}>
+                <p className={styles.questCompleteBody}>
                   {attending
-                    ? "Nos complace informarte que tu respuesta ha sido recibida y registrada en el gran libro de invitados. Guarda bien esta confirmación: te esperamos el 16 de enero de 2027 en Retiro San Juan."
-                    : "Hemos registrado tu respuesta en el gran libro de invitados. Lamentamos que no puedas acompañarnos, pero quedará constancia de tu cariño."}
+                    ? "Tu respuesta ha quedado grabada en el gran libro de aventureros. Prepara tu equipo: te esperamos el 16 de enero de 2027 en Retiro San Juan."
+                    : "Hemos anotado tu respuesta en el gran libro de aventureros. Lamentamos que no puedas unirte a esta aventura, pero quedará constancia de tu aprecio."}
                 </p>
-                <p className={styles.letterSignature}>Con cariño, N&amp;C</p>
+                <p className={styles.questCompleteSign}>
+                  Con cariño, los futuros esposos
+                </p>
               </div>
             )}
           </form>
@@ -509,16 +566,16 @@ function Invitation() {
           rel="noopener noreferrer"
           className={styles.detailsLink}
         >
-          Ver más detalles de la boda →
+          Ver todos los detalles de la boda →
         </Link>
 
         <p className={styles.deadlineNote}>
-          Si algo cambia, tienes hasta el 1 de diciembre para avisarnos
-          entrando de nuevo a este mismo link.
+          Si tus planes cambian, puedes reforjar tu respuesta hasta el 1 de
+          diciembre de 2026 volviendo a este mismo portal.
         </p>
       </div>
     </div>
   );
 }
 
-export default Invitation;
+export default InvitationRPG;
