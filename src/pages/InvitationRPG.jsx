@@ -248,7 +248,7 @@ function InvitationRPG() {
             {isPlural ? (
               <>
                 Se busca a valientes aliados para presenciar la unión de dos
-                almas. Vuestra presencia significaría muchísimo para
+                almas. Su presencia significaría muchísimo para
                 nosotros — solo necesitamos saber si emprenderán el viaje con nosotros.
               </>
             ) : (
@@ -283,7 +283,9 @@ function InvitationRPG() {
         </div>
 
         <div className={styles.characterCard}>
-          <span className={styles.characterCardLabel}>Aventurero convocado</span>
+          <span className={styles.characterCardLabel}>
+            {isPlural ? "Aventureros convocados" : "Aventurero convocado"}
+          </span>
           <span className={styles.characterCardName}>{getGreetingName(guest)}</span>
         </div>
 
@@ -540,7 +542,11 @@ function InvitationRPG() {
                 </p>
                 <p className={styles.questCompleteBody}>
                   {attending
-                    ? "Tu respuesta ha quedado grabada en el gran libro de aventureros. Prepara tu equipo: te esperamos el 16 de enero de 2027 en Retiro San Juan."
+                    ? isPlural
+                      ? "Su respuesta ha quedado grabada en el gran libro de aventureros. Preparen su equipo: los esperamos el 16 de enero de 2027 en Retiro San Juan."
+                      : "Tu respuesta ha quedado grabada en el gran libro de aventureros. Prepara tu equipo: te esperamos el 16 de enero de 2027 en Retiro San Juan."
+                    : isPlural
+                    ? "Hemos anotado su respuesta en el gran libro de aventureros. Lamentamos que no puedan unirse a esta aventura, pero quedará constancia de su aprecio."
                     : "Hemos anotado tu respuesta en el gran libro de aventureros. Lamentamos que no puedas unirte a esta aventura, pero quedará constancia de tu aprecio."}
                 </p>
                 <p className={styles.questCompleteSign}>
