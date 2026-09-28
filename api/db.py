@@ -134,6 +134,24 @@ def init_db():
         )
         cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS attending BOOLEAN")
         cursor.execute("ALTER TABLE guests ADD COLUMN IF NOT EXISTS allergies TEXT")
+        # Per-companion RSVP, aligned with companion_names; attending is the
+        # primary guest's own answer.
+        cursor.execute(
+            "ALTER TABLE guests ADD COLUMN IF NOT EXISTS companions_attending BOOLEAN[]"
+        )
+        # Answers given before per-person RSVP applied to the whole party; an
+        # unnamed +1 on an accepted invitation was never brought along.
+        cursor.execute(
+            """
+            UPDATE guests
+            SET companions_attending = ARRAY(
+                SELECT CASE WHEN guests.attending THEN name <> '' ELSE false END
+                FROM unnest(guests.companion_names) WITH ORDINALITY AS c(name, ord)
+                ORDER BY ord
+            )
+            WHERE attending IS NOT NULL AND companions_attending IS NULL
+        """
+        )
 
         # Photos table (files live in the 'photos' storage bucket)
         cursor.execute(
@@ -259,7 +277,7 @@ def get_guest_by_uuid(guest_uuid):
         cursor.execute(
             """
             SELECT id, uuid, first_name, nickname, companion_names, group_name,
-                   attending, allergies
+                   attending, companions_attending, allergies
             FROM guests
             WHERE uuid = %s
         """,
@@ -271,36 +289,32 @@ def get_guest_by_uuid(guest_uuid):
         return None
 
 
-def update_guest_rsvp(guest_uuid, attending, allergies=None, companion_names=None):
+def normalize_companions_attending(companion_names, values):
+    """One answer (True/False/None) per companion, in companion_names order"""
+    values = values if isinstance(values, list) else []
+    padded = values + [None] * len(companion_names)
+    return [v if isinstance(v, bool) else None for v in padded[: len(companion_names)]]
+
+
+def update_guest_rsvp(
+    guest_uuid, attending, companions_attending, allergies=None, companion_names=None
+):
     """Updates a guest's RSVP response (public, via the invitation page)"""
     with get_db() as conn:
         cursor = conn.cursor(row_factory=dict_row)
-
-        if companion_names is not None:
-            cursor.execute(
-                """
-                UPDATE guests
-                SET attending = %s,
-                    allergies = %s,
-                    companion_names = %s
-                WHERE uuid = %s
-                RETURNING id, uuid, first_name, nickname, companion_names, group_name,
-                          attending, allergies
-            """,
-                (attending, allergies, companion_names, guest_uuid),
-            )
-        else:
-            cursor.execute(
-                """
-                UPDATE guests
-                SET attending = %s,
-                    allergies = %s
-                WHERE uuid = %s
-                RETURNING id, uuid, first_name, nickname, companion_names, group_name,
-                          attending, allergies
-            """,
-                (attending, allergies, guest_uuid),
-            )
+        cursor.execute(
+            """
+            UPDATE guests
+            SET attending = %s,
+                companions_attending = %s,
+                allergies = %s,
+                companion_names = COALESCE(%s, companion_names)
+            WHERE uuid = %s
+            RETURNING id, uuid, first_name, nickname, companion_names, group_name,
+                      attending, companions_attending, allergies
+        """,
+            (attending, companions_attending, allergies, companion_names, guest_uuid),
+        )
 
         if cursor.rowcount == 0:
             raise ValueError("Guest not found")
@@ -316,8 +330,8 @@ def get_all_guests():
         cursor.execute(
             """
             SELECT id, uuid, first_name, last_name, nickname, phone,
-                   companion_names, group_name, attending, allergies,
-                   link_generated, link_sent, created_at
+                   companion_names, group_name, attending, companions_attending,
+                   allergies, link_generated, link_sent, created_at
             FROM guests
             ORDER BY first_name ASC, last_name ASC
         """
@@ -335,6 +349,7 @@ def create_guest(
     companion_names=None,
     group_name=None,
     attending=None,
+    companions_attending=None,
     allergies=None,
     link_generated=False,
     link_sent=False,
@@ -346,13 +361,13 @@ def create_guest(
             """
             INSERT INTO guests (
                 first_name, last_name, nickname, phone,
-                companion_names, group_name, attending, allergies,
-                link_generated, link_sent
+                companion_names, group_name, attending, companions_attending,
+                allergies, link_generated, link_sent
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, uuid, first_name, last_name, nickname, phone,
-                      companion_names, group_name, attending, allergies,
-                      link_generated, link_sent, created_at
+                      companion_names, group_name, attending, companions_attending,
+                      allergies, link_generated, link_sent, created_at
         """,
             (
                 first_name,
@@ -362,6 +377,7 @@ def create_guest(
                 companion_names or [],
                 group_name,
                 attending,
+                companions_attending,
                 allergies,
                 link_generated,
                 link_sent,
@@ -381,11 +397,12 @@ def update_guest(
     companion_names=None,
     group_name=None,
     attending=None,
+    companions_attending=None,
     allergies=None,
     link_generated=False,
     link_sent=False,
 ):
-    """Updates an existing guest"""
+    """Updates an existing guest (companions_attending=None keeps the stored answers)"""
     with get_db() as conn:
         cursor = conn.cursor(row_factory=dict_row)
         cursor.execute(
@@ -398,13 +415,14 @@ def update_guest(
                 companion_names = %s,
                 group_name = %s,
                 attending = %s,
+                companions_attending = COALESCE(%s, companions_attending),
                 allergies = %s,
                 link_generated = %s,
                 link_sent = %s
             WHERE id = %s
             RETURNING id, uuid, first_name, last_name, nickname, phone,
-                      companion_names, group_name, attending, allergies,
-                      link_generated, link_sent, created_at
+                      companion_names, group_name, attending, companions_attending,
+                      allergies, link_generated, link_sent, created_at
         """,
             (
                 first_name,
@@ -414,6 +432,7 @@ def update_guest(
                 companion_names or [],
                 group_name,
                 attending,
+                companions_attending,
                 allergies,
                 link_generated,
                 link_sent,

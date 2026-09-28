@@ -7,7 +7,7 @@ import os
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 )
-from db import delete_guest, update_guest
+from db import normalize_companions_attending, delete_guest, update_guest
 
 
 def serialize_guest(guest):
@@ -21,6 +21,9 @@ def serialize_guest(guest):
         "companion_names": guest["companion_names"] or [],
         "group_name": guest["group_name"],
         "attending": guest["attending"],
+        "companions_attending": normalize_companions_attending(
+            guest["companion_names"] or [], guest["companions_attending"]
+        ),
         "allergies": guest["allergies"],
         "link_generated": guest["link_generated"],
         "link_sent": guest["link_sent"],
@@ -89,6 +92,15 @@ class handler(BaseHTTPRequestHandler):
             if not isinstance(attending, bool):
                 attending = None
 
+            # Missing means "keep what's stored" (e.g. an older Manager tab)
+            companions_attending = (
+                normalize_companions_attending(
+                    companion_names, data.get("companions_attending")
+                )
+                if "companions_attending" in data
+                else None
+            )
+
             updated_guest = update_guest(
                 guest_id,
                 first_name=first_name,
@@ -98,6 +110,7 @@ class handler(BaseHTTPRequestHandler):
                 companion_names=companion_names,
                 group_name=clean(data.get("group_name")),
                 attending=attending,
+                companions_attending=companions_attending,
                 allergies=clean(data.get("allergies")),
                 link_generated=bool(data.get("link_generated", False)),
                 link_sent=bool(data.get("link_sent", False)),

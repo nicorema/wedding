@@ -7,7 +7,7 @@ import urllib.parse
 
 # Add parent directory to path to import db module
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from db import get_guest_by_uuid, update_guest_rsvp
+from db import get_guest_by_uuid, update_guest_rsvp, normalize_companions_attending
 
 
 def serialize_guest(guest):
@@ -18,6 +18,9 @@ def serialize_guest(guest):
         "companion_names": guest["companion_names"] or [],
         "group_name": guest["group_name"],
         "attending": guest["attending"],
+        "companions_attending": normalize_companions_attending(
+            guest["companion_names"] or [], guest["companions_attending"]
+        ),
         "allergies": guest["allergies"],
     }
 
@@ -103,8 +106,38 @@ class handler(BaseHTTPRequestHandler):
                     (name or "").strip() for name in companion_names
                 ]
 
+            current = get_guest_by_uuid(guest_uuid)
+            if not current:
+                raise ValueError("Guest not found")
+            names = (
+                companion_names
+                if companion_names is not None
+                else current["companion_names"] or []
+            )
+
+            # Each companion answers for themselves; clients that only send
+            # the party-wide answer apply it to every named companion.
+            if "companions_attending" in data:
+                companions_attending = normalize_companions_attending(
+                    names, data.get("companions_attending")
+                )
+            else:
+                companions_attending = [attending and bool(n) for n in names]
+
+            if None in companions_attending:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {"error": "Every companion needs a true/false answer"}
+                    ).encode()
+                )
+                return
+
             updated_guest = update_guest_rsvp(
-                guest_uuid, attending, allergies, companion_names
+                guest_uuid, attending, companions_attending, allergies, companion_names
             )
 
             self.send_response(200)
