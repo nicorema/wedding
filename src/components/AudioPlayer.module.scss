@@ -50,6 +50,22 @@
   }
 }
 
+.audioPlayer.pinnedTop {
+  // Same height as the word-search buttons it sits next to
+  @media (max-width: 780px) {
+    top: 8px;
+    bottom: auto;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 0.35rem;
+
+    .playButton {
+      font-size: 16px;
+      padding: 4px;
+    }
+  }
+}
+
 .playButton {
   background: none;
   border: none;

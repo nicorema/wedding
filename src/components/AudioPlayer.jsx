@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useAudio } from "../contexts/AudioContext";
 import styles from "./AudioPlayer.module.scss";
 
-function AudioPlayer({ src, autoPlay = false }) {
+function AudioPlayer({ src, autoPlay = false, isPinnedTop = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.02);
   const [showControls, setShowControls] = useState(false);
@@ -254,7 +254,10 @@ function AudioPlayer({ src, autoPlay = false }) {
   };
 
   return (
-    <div ref={playerContainerRef} className={styles.audioPlayer}>
+    <div
+      ref={playerContainerRef}
+      className={`${styles.audioPlayer} ${isPinnedTop ? styles.pinnedTop : ""}`}
+    >
       <audio ref={audioRef} src={src} loop onEnded={handleEnded} />
 
       <button
