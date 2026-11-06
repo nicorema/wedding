@@ -607,6 +607,10 @@
   &:hover {
     background: rgba(37, 211, 102, 0.3);
   }
+
+  & + br + & {
+    margin-top: 0.35rem;
+  }
 }
 
 .guestsTotal {

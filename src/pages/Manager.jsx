@@ -502,8 +502,41 @@ ${invitationUrl}
 📋 *Te pedimos completar la información y confirmar tu asistencia a más tardar el 1 de diciembre de 2026.*`;
   };
 
-  const buildWhatsappLink = (guest) => {
-    const message = buildGuestMessage(guest);
+  // Reminder for parties that haven't answered yet; plural like the invitation.
+  const buildReminderMessage = (guest) => {
+    const name = getGreetingName(guest);
+    const invitationUrl = `${window.location.origin}/invitacion?uuid=${guest.uuid}`;
+    const isPlural =
+      Boolean(guest.group_name) || (guest.companion_names || []).some(Boolean);
+
+    if (isPlural) {
+      return `¡Holaaa, ${name}! 💌
+
+Soy Valentina Ríos, la Wedding Planner de Caro y Nico, y quiero hacerles un pequeño recordatorio: ¡aún estamos pendientes de recibir su confirmación de asistencia! 🥰
+
+¿Nos ayudan confirmando si nos acompañarán en este día tan especial?
+
+${invitationUrl}
+
+Y si por alguna razón no pueden asistir, ¡los extrañaremos muchísimo! ❤️ Pero les agradecemos que también nos lo hagan saber a través de la invitación, para poder organizar todo de la mejor manera.
+
+¡Gracias por ayudarnos a que esta aventura salga increíble! ✨`;
+    }
+
+    return `¡Holaaa, ${name}! 💌
+
+Soy Valentina Ríos, la Wedding Planner de Caro y Nico, y quiero hacerte un pequeño recordatorio: ¡aún estamos pendientes de recibir tu confirmación de asistencia! 🥰
+
+¿Nos ayudas confirmando si nos acompañarás en este día tan especial?
+
+${invitationUrl}
+
+Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ Pero te agradecemos que también nos lo hagas saber a través de la invitación, para poder organizar todo de la mejor manera.
+
+¡Gracias por ayudarnos a que esta aventura salga increíble! ✨`;
+  };
+
+  const buildWhatsappLink = (guest, message) => {
     const digits = guest.phone ? guest.phone.replace(/\D/g, "") : "";
     const phoneParam = digits ? `phone=${digits}&` : "";
     // The WhatsApp desktop app turns emojis into "?" and drops line breaks,
@@ -1023,7 +1056,10 @@ ${invitationUrl}
                                 <td className={styles.centerCell}>
                                   <a
                                     className={styles.messageButton}
-                                    href={buildWhatsappLink(guest)}
+                                    href={buildWhatsappLink(
+                                      guest,
+                                      buildGuestMessage(guest)
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title={
@@ -1034,6 +1070,23 @@ ${invitationUrl}
                                   >
                                     💬 Abrir WhatsApp
                                   </a>
+                                  {guest.link_sent && guest.attending === null && (
+                                    <>
+                                      <br />
+                                      <a
+                                        className={styles.messageButton}
+                                        href={buildWhatsappLink(
+                                          guest,
+                                          buildReminderMessage(guest)
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Recordarle que confirme asistencia"
+                                      >
+                                        ⏰ Generar recordatorio
+                                      </a>
+                                    </>
+                                  )}
                                 </td>
                                 <td className={styles.centerCell}>
                                   <input
