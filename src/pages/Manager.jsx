@@ -602,6 +602,21 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
     0
   );
 
+  // Invitation sent but someone in the party hasn't answered yet.
+  const pendingGuests = guests.filter(
+    (guest) => guest.link_sent && personAnswers(guest).includes(null)
+  );
+  const totalPendingPeople = pendingGuests.reduce(
+    (total, guest) =>
+      total + personAnswers(guest).filter((answer) => answer === null).length,
+    0
+  );
+  const notSentGuests = guests.filter((guest) => !guest.link_sent);
+  const totalNotSentPeople = notSentGuests.reduce(
+    (total, guest) => total + headcount(guest),
+    0
+  );
+
   const totalWithAllergies = guests.filter((guest) => guest.allergies).length;
   const totalLinksSent = guests.filter((guest) => guest.link_sent).length;
 
@@ -612,9 +627,7 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
   const filteredGuests = guests.filter((guest) => {
     if (attendingFilter === "yes") return isAnyoneGoing(guest);
     if (attendingFilter === "no") return isSomeoneDeclining(guest);
-    // Invitation sent but no answer yet
-    if (attendingFilter === "pending")
-      return guest.link_sent && guest.attending === null;
+    if (attendingFilter === "pending") return pendingGuests.includes(guest);
     if (attendingFilter === "notSent") return !guest.link_sent;
     return true;
   });
@@ -929,7 +942,7 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                   }`}
                   onClick={() => setAttendingFilter("all")}
                 >
-                  Todos ({guests.length})
+                  Todos ({totalGuests} personas · {guests.length} invitaciones)
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -937,8 +950,7 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                   }`}
                   onClick={() => setAttendingFilter("yes")}
                 >
-                  Confirmados (
-                  {totalConfirmed})
+                  Confirmados ({totalConfirmed} personas)
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -946,7 +958,7 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                   }`}
                   onClick={() => setAttendingFilter("no")}
                 >
-                  No van ({totalDeclined})
+                  No van ({totalDeclined} personas)
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -954,12 +966,8 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                   }`}
                   onClick={() => setAttendingFilter("pending")}
                 >
-                  Por confirmar (
-                  {
-                    guests.filter((g) => g.link_sent && g.attending === null)
-                      .length
-                  }
-                  )
+                  Por confirmar ({totalPendingPeople} personas ·{" "}
+                  {pendingGuests.length} invitaciones)
                 </button>
                 <button
                   className={`${styles.filterButton} ${
@@ -967,7 +975,8 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                   }`}
                   onClick={() => setAttendingFilter("notSent")}
                 >
-                  Sin enviar ({guests.filter((g) => !g.link_sent).length})
+                  Sin enviar ({totalNotSentPeople} personas ·{" "}
+                  {notSentGuests.length} invitaciones)
                 </button>
               </div>
               <button
