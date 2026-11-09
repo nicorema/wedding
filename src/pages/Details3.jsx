@@ -73,7 +73,7 @@ function Details3() {
             ))}
           </div>
 
-          <p className={styles.signature}>Nico &amp; Caro</p>
+          <p className={styles.signature}>Caro &amp; Nico</p>
         </div>
       </div>
     </PageContainer>

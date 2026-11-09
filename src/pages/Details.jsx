@@ -162,7 +162,7 @@ function Details() {
         <p className={styles.signature}>
           Con cariño,
           <br />
-          Nico y Caro
+          Caro y Nico
         </p>
       </div>
     </PageContainer>

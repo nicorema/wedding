@@ -15,7 +15,7 @@ function Navbar() {
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
           <span className={styles.logoMain}>Nos Casamos</span>
-          <span className={styles.logoSub}>Nico y Caro</span>
+          <span className={styles.logoSub}>Caro y Nico</span>
         </Link>
         <ul className={styles.navList}>
           <li>

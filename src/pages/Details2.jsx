@@ -33,7 +33,7 @@ function Details2() {
       <div className={styles.details}>
         <div className={styles.header}>
           <p className={styles.kicker}>Guarda este pase</p>
-          <h1 className={styles.title}>Nico &amp; Caro</h1>
+          <h1 className={styles.title}>Caro &amp; Nico</h1>
         </div>
 
         <div className={styles.ticket}>
@@ -94,7 +94,7 @@ function Details2() {
         <p className={styles.signature}>
           Con cariño,
           <br />
-          Nico y Caro
+          Caro y Nico
         </p>
       </div>
     </PageContainer>

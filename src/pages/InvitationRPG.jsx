@@ -292,10 +292,10 @@ function InvitationRPG() {
         <div className={styles.questHeader}>
           <img
             src={invitationPhoto4}
-            alt="Nico y Caro"
+            alt="Caro y Nico"
             className={styles.headerPhoto}
           />
-          <h1 className={styles.questTitle}>La Alianza de Nico &amp; Caro</h1>
+          <h1 className={styles.questTitle}>La Alianza de Caro &amp; Nico</h1>
           <p className={styles.questGiver}>
             Misión ofrecida por los futuros esposos
           </p>
@@ -321,17 +321,17 @@ function InvitationRPG() {
           <div className={styles.galleryRow}>
             <img
               src={invitationPhoto2}
-              alt="Nico y Caro"
+              alt="Caro y Nico"
               className={`${styles.galleryPhoto} ${styles.tiltLeft}`}
             />
             <img
               src={invitationPhoto3}
-              alt="Nico y Caro"
+              alt="Caro y Nico"
               className={`${styles.galleryPhoto} ${styles.tiltNone}`}
             />
             <img
               src={invitationPhoto1}
-              alt="Nico y Caro"
+              alt="Caro y Nico"
               className={`${styles.galleryPhoto} ${styles.tiltRight}`}
             />
           </div>

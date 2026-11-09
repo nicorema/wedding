@@ -135,19 +135,19 @@ _SHUSH = "🤫"  # 🤫 cara callando
 LINK_AL_FINAL = "https://wedding-flax-two.vercel.app/cuando"
 
 MENSAJE_INVITADO_SOLO = f"""¡Hola, (nombre del invitado)! {_ANILLO}
-Se acerca el matrimonio de Nico & Caro, y queremos compartir contigo este momento tan especial.
+Se acerca el matrimonio de Caro & Nico, y queremos compartir contigo este momento tan especial.
 En el enlace encontrarás la reserva de la fecha y la ciudad donde celebrarán su unión (aún no podemos revelar todos los detalles {_SHUSH}). Aprovecha también para chismosear la página, dejarles mensajitos y jugar un poco por ahí.
 La invitación oficial llegará próximamente con toda la información.
 Este es el número oficial del matrimonio, así que cualquier duda o mensaje puedes escribir con total confianza por este medio."""
 
 MENSAJE_GRUPO = f"""¡Hola, (nombre del grupo)! {_ANILLO}
-Se acerca el matrimonio de Nico & Caro, y queremos compartir con ustedes este momento tan especial.
+Se acerca el matrimonio de Caro & Nico, y queremos compartir con ustedes este momento tan especial.
 En el enlace encontrarán la reserva de la fecha y la ciudad donde celebrarán su unión (aún no podemos revelar todos los detalles {_SHUSH}). Aprovechen también para chismosear la página, dejarles mensajitos y jugar un poco por ahí.
 La invitación oficial llegará próximamente con toda la información.
 Este es el número oficial del matrimonio, así que cualquier duda o mensaje pueden escribir con total confianza por este medio."""
 
 MENSAJE_PLUS_ONE = f"""¡Hola, (nombre del invitado)! {_ANILLO}
-Se acerca el matrimonio de Nico & Caro, y queremos compartir contigo y tu plus one este momento tan especial.
+Se acerca el matrimonio de Caro & Nico, y queremos compartir contigo y tu plus one este momento tan especial.
 En el enlace encontrarás la reserva de la fecha y la ciudad donde celebrarán su unión (aún no podemos revelar todos los detalles {_SHUSH}). Aprovecha también para chismosear la página, dejarles mensajitos y jugar un poco por ahí.
 La invitación oficial llegará próximamente con toda la información.
 Este es el número oficial del matrimonio, así que cualquier duda o mensaje puedes escribir con total confianza por este medio."""

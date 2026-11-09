@@ -275,17 +275,17 @@ function Invitation() {
         <div className={styles.gallery}>
           <img
             src={couplePhoto}
-            alt="Nico y Caro"
+            alt="Caro y Nico"
             className={`${styles.galleryPhoto} ${styles.tiltLeft}`}
           />
           <img
             src={kissPhoto}
-            alt="Nico y Caro"
+            alt="Caro y Nico"
             className={`${styles.galleryPhoto} ${styles.tiltNone}`}
           />
           <img
             src={canalPhoto}
-            alt="Nico y Caro"
+            alt="Caro y Nico"
             className={`${styles.galleryPhoto} ${styles.tiltRight}`}
           />
         </div>

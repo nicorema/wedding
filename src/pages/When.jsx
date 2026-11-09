@@ -91,7 +91,7 @@ function When() {
               <p className={styles.textSignature}>
                 Con cariño,
                 <br />
-                Nico y Caro
+                Caro y Nico
               </p>
             </div>
           </div>
