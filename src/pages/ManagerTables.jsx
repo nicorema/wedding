@@ -43,17 +43,17 @@ const jsonRequest = (method, body) => ({
 const getSeating = () => fetchJson("/api/admin/tables");
 const setupSeating = (tableCount) =>
   fetchJson(
-    "/api/admin/tables/setup",
+    "/api/admin/tables?action=setup",
     jsonRequest("POST", { table_count: tableCount })
   );
 const createTable = (table) =>
   fetchJson("/api/admin/tables", jsonRequest("POST", table));
 const updateTable = (table) =>
-  fetchJson(`/api/admin/tables/${table.id}`, jsonRequest("PUT", table));
+  fetchJson(`/api/admin/tables?id=${table.id}`, jsonRequest("PUT", table));
 const deleteTable = (tableId) =>
-  fetchJson(`/api/admin/tables/${tableId}`, { method: "DELETE" });
+  fetchJson(`/api/admin/tables?id=${tableId}`, { method: "DELETE" });
 const saveSeats = (assignments) =>
-  fetchJson("/api/admin/seats", jsonRequest("PUT", { assignments }));
+  fetchJson("/api/admin/tables?action=seats", jsonRequest("PUT", { assignments }));
 
 const personKey = (guestId, personIndex) => `${guestId}-${personIndex}`;
 
