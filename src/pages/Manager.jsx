@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageContainer from "../components/PageContainer";
 import ManagerPhotos from "./ManagerPhotos";
 import ManagerGallery from "./ManagerGallery";
+import ManagerTables from "./ManagerTables";
 import styles from "./Manager.module.scss";
 
 const ADMIN_USERNAME = "admin";
@@ -13,6 +14,7 @@ const SECTION_TO_TAB = {
   mensajes: "messages",
   ranking: "ranking",
   invitados: "guests",
+  mesas: "tables",
   fotos: "photos",
 };
 
@@ -20,6 +22,7 @@ const TAB_TO_SECTION = {
   messages: "mensajes",
   ranking: "ranking",
   guests: "invitados",
+  tables: "mesas",
   photos: "fotos",
 };
 
@@ -783,6 +786,14 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
           </button>
           <button
             className={`${styles.tab} ${
+              activeTab === "tables" ? styles.activeTab : ""
+            }`}
+            onClick={() => setActiveTab("tables")}
+          >
+            🪑 Mesas
+          </button>
+          <button
+            className={`${styles.tab} ${
               activeTab === "photos" ? styles.activeTab : ""
             }`}
             onClick={() => setActiveTab("photos")}
@@ -883,6 +894,13 @@ Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ 
                 onChange={refetchApprovedPhotos}
               />
             )}
+          </div>
+        )}
+
+        {/* Tables Tab */}
+        {activeTab === "tables" && (
+          <div className={styles.tabContent}>
+            <ManagerTables guests={guests} isLoadingGuests={isLoadingGuests} />
           </div>
         )}
 

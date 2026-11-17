@@ -175,6 +175,47 @@ def init_db():
         # Gallery order, set from the Manager; new approvals go to the end
         cursor.execute("ALTER TABLE photos ADD COLUMN IF NOT EXISTS position INTEGER")
 
+        # Seating chart: tables placed freely on the Manager canvas. The
+        # couple's table is created once and can't be deleted or seated.
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS seating_tables (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                x INTEGER NOT NULL DEFAULT 0,
+                y INTEGER NOT NULL DEFAULT 0,
+                is_couple BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        )
+        # One row per seated person: person_index 0 is the guest, i + 1 is
+        # companion_names[i].
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS seating_assignments (
+                guest_id INTEGER NOT NULL REFERENCES guests(id) ON DELETE CASCADE,
+                person_index INTEGER NOT NULL,
+                table_id INTEGER NOT NULL REFERENCES seating_tables(id) ON DELETE CASCADE,
+                seat INTEGER NOT NULL,
+                PRIMARY KEY (guest_id, person_index),
+                UNIQUE (table_id, seat)
+            )
+        """
+        )
+
+        # Close Supabase's auto-generated REST API (anon key) on every table.
+        # The backend connects as the table owner, which RLS doesn't apply to.
+        for table in (
+            "scores",
+            "messages",
+            "guests",
+            "photos",
+            "seating_tables",
+            "seating_assignments",
+        ):
+            cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+
         # Indexes to improve performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_scores_time ON scores(time ASC)")
         cursor.execute(
@@ -610,3 +651,118 @@ def reorder_photos(photo_ids):
         """,
             (photo_ids,),
         )
+
+
+SEATING_TABLE_COLUMNS = "id, name, x, y, is_couple"
+
+
+def get_seating():
+    """Gets every seating table and who sits where"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            f"SELECT {SEATING_TABLE_COLUMNS} FROM seating_tables ORDER BY id ASC"
+        )
+        tables = [dict(row) for row in cursor.fetchall()]
+        cursor.execute(
+            "SELECT guest_id, person_index, table_id, seat FROM seating_assignments"
+        )
+        assignments = [dict(row) for row in cursor.fetchall()]
+        return {"tables": tables, "assignments": assignments}
+
+
+def setup_seating(table_count):
+    """Creates the couple's table plus table_count tables, only if none exist yet"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        # Two Manager tabs opening at once must not both create the tables.
+        cursor.execute("SELECT pg_advisory_xact_lock(hashtext('seating_setup'))")
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM seating_tables)")
+        if not cursor.fetchone()[0]:
+            # Same grid as the Manager: 150px cells, table 10px inside its cell.
+            cursor.execute(
+                "INSERT INTO seating_tables (name, x, y, is_couple) VALUES (%s, %s, %s, TRUE)",
+                ("Caro y Nico", 10, 10),
+            )
+            for i in range(table_count):
+                cursor.execute(
+                    "INSERT INTO seating_tables (name, x, y) VALUES (%s, %s, %s)",
+                    (f"Mesa {i + 1}", 10 + (i % 6) * 150, 160 + (i // 6) * 150),
+                )
+    return get_seating()
+
+
+def create_seating_table(name, x, y):
+    """Creates a regular (non-couple) seating table"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            f"""
+            INSERT INTO seating_tables (name, x, y)
+            VALUES (%s, %s, %s)
+            RETURNING {SEATING_TABLE_COLUMNS}
+        """,
+            (name, x, y),
+        )
+        return dict(cursor.fetchone())
+
+
+def update_seating_table(table_id, name, x, y):
+    """Renames and/or moves a seating table"""
+    with get_db() as conn:
+        cursor = conn.cursor(row_factory=dict_row)
+        cursor.execute(
+            f"""
+            UPDATE seating_tables
+            SET name = %s, x = %s, y = %s
+            WHERE id = %s
+            RETURNING {SEATING_TABLE_COLUMNS}
+        """,
+            (name, x, y, table_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ValueError(f"Table with id {table_id} not found")
+        return dict(row)
+
+
+def delete_seating_table(table_id):
+    """Deletes a regular table; its people go back to the unseated pool"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM seating_tables WHERE id = %s AND is_couple = FALSE",
+            (table_id,),
+        )
+        if cursor.rowcount == 0:
+            raise ValueError(f"Table with id {table_id} not found")
+        return True
+
+
+def set_seats(assignments):
+    """Moves people in one go (a swap sends both); table_id None unseats.
+
+    Whoever still holds a target seat (e.g. someone no longer confirmed) loses it.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        for a in assignments:
+            cursor.execute(
+                "DELETE FROM seating_assignments WHERE guest_id = %s AND person_index = %s",
+                (a["guest_id"], a["person_index"]),
+            )
+        for a in assignments:
+            if a.get("table_id") is None:
+                continue
+            cursor.execute(
+                "DELETE FROM seating_assignments WHERE table_id = %s AND seat = %s",
+                (a["table_id"], a["seat"]),
+            )
+            cursor.execute(
+                """
+                INSERT INTO seating_assignments (guest_id, person_index, table_id, seat)
+                VALUES (%s, %s, %s, %s)
+            """,
+                (a["guest_id"], a["person_index"], a["table_id"], a["seat"]),
+            )
+    return get_seating()
