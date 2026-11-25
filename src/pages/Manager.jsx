@@ -515,28 +515,28 @@ ${invitationUrl}
     if (isPlural) {
       return `¡Holaaa, ${name}! 💌
 
-Soy Valentina Ríos, la Wedding Planner de Caro y Nico, y quiero hacerles un pequeño recordatorio: ¡aún estamos pendientes de recibir su confirmación de asistencia! 🥰
+Les habla Valentina Ríos, la Wedding Planner de Caro y Nico. ¡Ya nos estamos acercando a la fecha! 🗓️✨ Y revisando la lista, vemos que todavía no tenemos registrada su respuesta. 🥺
 
-¿Nos ayudan confirmando si nos acompañarán en este día tan especial?
+Les pedimos con mucho cariño que entren al siguiente link y llenen sus datos, *tanto si nos acompañarán como si no*:
 
 ${invitationUrl}
 
-Y si por alguna razón no pueden asistir, ¡los extrañaremos muchísimo! ❤️ Pero les agradecemos que también nos lo hagan saber a través de la invitación, para poder organizar todo de la mejor manera.
+Su respuesta es súper importante para que podamos organizar cada detalle de la mejor manera. 🙏
 
-¡Gracias por ayudarnos a que esta aventura salga increíble! ✨`;
+¡Les agradecemos muchísimo! ❤️`;
     }
 
     return `¡Holaaa, ${name}! 💌
 
-Soy Valentina Ríos, la Wedding Planner de Caro y Nico, y quiero hacerte un pequeño recordatorio: ¡aún estamos pendientes de recibir tu confirmación de asistencia! 🥰
+Te habla Valentina Ríos, la Wedding Planner de Caro y Nico. ¡Ya nos estamos acercando a la fecha! 🗓️✨ Y revisando la lista, vemos que todavía no tenemos registrada tu respuesta. 🥺
 
-¿Nos ayudas confirmando si nos acompañarás en este día tan especial?
+Te pedimos con mucho cariño que entres al siguiente link y llenes tus datos, *tanto si nos acompañarás como si no*:
 
 ${invitationUrl}
 
-Y si por alguna razón no puedes asistir, ¡te extrañaremos muchísimo! ❤️ Pero te agradecemos que también nos lo hagas saber a través de la invitación, para poder organizar todo de la mejor manera.
+Tu respuesta es súper importante para que podamos organizar cada detalle de la mejor manera. 🙏
 
-¡Gracias por ayudarnos a que esta aventura salga increíble! ✨`;
+¡Te lo agradecemos muchísimo! ❤️`;
   };
 
   const buildWhatsappLink = (guest, message) => {
